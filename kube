@@ -94,7 +94,7 @@ function kube_startup() {
       echo "Kube version ${KUBE_VERSION} is not the latest version: ${KUBE_LATEST_VERSION}"
       TMP_KUBE_EXE=$(mktemp)
       curl -s https://raw.githubusercontent.com/colab-coop/kube/main/kube --output ${TMP_KUBE_EXE}
-      yes | cp -rf ${TMP_KUBE_EXE} /usr/local/bin/kube
+      yes | cp -rf ${TMP_KUBE_EXE} ${HOME}/.local/bin/kube
       rm -rf ${TMP_KUBE_EXE}
       echo "Kube version ${KUBE_LATEST_VERSION} installed, you are ready to go..."
       exit 1
@@ -322,25 +322,25 @@ function kube_install() {
   cd $REPO_DIR
   if [ -f $(pwd)/kube ]
   then
-    if [ -f /usr/local/bin/kube ]
+    if [ -f ${HOME}/.local/bin/kube ]
     then
       if [ "$1" == "--force" ]
       then
         echo "Overwriting 'kube'..."
-        yes | cp -rf $(pwd)/kube /usr/local/bin/kube
+        yes | cp -rf $(pwd)/kube ${HOME}/.local/bin/kube
       else
         echo "'kube' already installed."
       fi
     else
       echo "Installing 'kube'..."
-      yes | cp -rf $(pwd)/kube /usr/local/bin/kube
+      yes | cp -rf $(pwd)/kube ${HOME}/.local/bin/kube
     fi
   else
     echo "Failed to install 'kube'."
   fi
-  if [ -f /usr/local/bin/kube ]
+  if [ -f ${HOME}/.local/bin/kube ]
   then
-    chmod u+x /usr/local/bin/kube
+    chmod +x ${HOME}/.local/bin/kube
   else
     echo "Failed to make 'kube' executable."
   fi

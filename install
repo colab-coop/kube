@@ -2,6 +2,7 @@
 
 TMP_KUBE_EXE=$(mktemp)
 curl -s https://raw.githubusercontent.com/colab-coop/kube/main/kube --output ${TMP_KUBE_EXE}
+mkdir -p ${HOME}/.local
 mkdir -p ${HOME}/.local/bin
 yes | cp -rf ${TMP_KUBE_EXE} ${HOME}/.local/bin/kube
 chmod +x ${HOME}/.local/bin/kube

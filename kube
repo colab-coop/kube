@@ -248,7 +248,7 @@ function kube_install_with_brew() {
 }
 
 function kube_install_with_apt() {
-  local APT_DEPS=(go git kubectl jq yq helm docker)
+  local APT_DEPS=(golang-go git kubectl jq yq helm docker)
   for i in "${APT_DEPS[@]}"
   do
     if ! command -v $i &> /dev/null

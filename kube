@@ -1713,8 +1713,6 @@ function kube_dev() {
   esac
 }
 
-kube_startup
-
 case $1 in
   "install" )
     kube_check_dependencies
@@ -1722,10 +1720,12 @@ case $1 in
     exit
     ;;
   "dev" )
+    kube_startup
     kube_dev "${@:2}"
     exit
     ;;
   "ops" )
+    kube_startup
     kube_ops "${@:2}"
     exit
     ;;

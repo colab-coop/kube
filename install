@@ -3,8 +3,9 @@
 TMP_KUBE_EXE=$(mktemp)
 curl -s https://raw.githubusercontent.com/colab-coop/kube/main/kube --output ${TMP_KUBE_EXE}
 yes | cp -rf ${TMP_KUBE_EXE} ${HOME}/.local/bin/kube
+mkdir -p ${HOME}/.local/bin
 chmod +x ${HOME}/.local/bin/kube
 rm -rf ${TMP_KUBE_EXE}
 echo "Kube installed, you are ready to go..."
 
-# curl -s https://raw.githubusercontent.com/colab-coop/kube/main/install | sudo bash
+# curl -s https://raw.githubusercontent.com/colab-coop/kube/main/install | bash

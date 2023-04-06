@@ -1,0 +1,1736 @@
+#!/bin/bash
+
+KUBE_VERSION=0.0.1
+KUBE_LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/colab-coop/kube/main/VERSION)
+
+
+DEFAULT_PROVIDER=hcloud
+DEFAULT_ENVIRONMENT=development
+DEFAULT_VERSION=v1
+DEFAULT_USER=devops
+DEFAULT_AWS_REGION=us-east-1
+DEFAULT_HCLOUD_ZONE=us-east
+DEFAULT_HCLOUD_LOCATION=ash
+
+
+ROOK_CEPH_OSD=80
+
+
+NGINX_INGRESS_REPLICAS=3
+ROOK_CEPH_REPLICAS=3
+
+HASHICORP_VAULT_REPLICAS=3
+MINIO_CONSOLE_REPLICAS=3
+ONEPASSWORD_CONNECT_REPLICAS=3
+DOCKER_REGISTRY_REPLICAS=3
+HELM_CHARTMUSEUM_REPLICAS=3
+GITLAB_CI_REPLICAS=3
+PROMETHEUS_STACK_REPLICAS=3
+ELASTIC_STACK_REPLICAS=3
+
+
+KUBE_OPERATOR_CLASS=small
+JETSTACK_CERT_MANAGER_CLASS=small
+VMWARE_VELERO_CLASS=medium
+ROOK_CEPH_CLASS=xlarge
+
+K8S_DASHBOARD_CLASS=medium
+HASHICORP_VAULT_CLASS=small
+MINIO_CONSOLE_CLASS=small
+DOCKER_REGISTRY_CLASS=small
+HELM_CHARTMUSEUM_CLASS=small
+GITLAB_CI_CLASS=medium
+ONEPASSWORD_CONNECT_CLASS=small
+PROMETHEUS_STACK_CLASS=large
+ELASTIC_STACK_CLASS=large
+BITNAMI_PHPMYADMIN_CLASS=small
+RUNIX_PGADMIN_CLASS=small
+
+
+KUBE_OPERATOR_ENDPOINT=status
+ROOK_CEPH_ENDPOINT=ceph
+
+K8S_DASHBOARD_ENDPOINT=dash
+HASHICORP_VAULT_ENDPOINT=vault
+MINIO_CONSOLE_ENDPOINT=minio
+MINIO_CONSOLE_GATEWAY=gateway
+ONEPASSWORD_CONNECT_ENDPOINT=1pass
+DOCKER_REGISTRY_ENDPOINT=docker
+HELM_CHARTMUSEUM_ENDPOINT=helm
+GITLAB_CI_ENDPOINT=git
+GITLAB_CI_GATEWAY=registry
+PROMETHEUS_STACK_ENDPOINT=grafana
+ELASTIC_STACK_ENDPOINT=kibana
+ELASTIC_STACK_GATEWAY=elastic
+BITNAMI_PHPMYADMIN_ENDPOINT=pma
+RUNIX_PGADMIN_ENDPOINT=pga
+
+
+CURRENT_DIR=$(pwd)
+CACHE_DIR="${HOME}/.kubecli"
+REPO_DIR=$(git rev-parse --show-toplevel)
+REPO_BRANCH=$(git branch --show-current)
+TIMESTAMP=$(date +"%Y-%m-%d %H-%M-%S")
+
+
+CONFIGURATION_HCLOUD_FILE=bG9jYWxzIHsKICBrdWJlX3NldHRpbmdzICAgICAgID0gbW9kdWxlLmNvbmZpZ3VyYXRpb25fa3ViZV9zZXR0aW5ncwogIGt1YmVfc2VjcmV0cyAgICAgICAgPSBtb2R1bGUuY29uZmlndXJhdGlvbl9rdWJlX3NlY3JldHMKICBrdWJlX2luZnJhc3RydWN0dXJlID0gbW9kdWxlLmNvbmZpZ3VyYXRpb25fa3ViZV9pbmZyYXN0cnVjdHVyZQp9Cgptb2R1bGUgImNvbmZpZ3VyYXRpb25fa3ViZV9zZXR0aW5ncyIgewogIHNvdXJjZSAgICAgICAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvY29uZmlndXJhdGlvbi1rdWJlLXNldHRpbmdzIgogIGNvbmZpZ3VyYXRpb24gID0geWFtbGRlY29kZShmaWxlKCIuL3NldHRpbmdzL2NvbmZpZ3VyYXRpb24ueWFtbCIpKQogIGluZnJhc3RydWN0dXJlID0geWFtbGRlY29kZShmaWxlKCIuL3NldHRpbmdzL2luZnJhc3RydWN0dXJlLnlhbWwiKSkKICBrdWJlcm5ldGVzICAgICA9IHlhbWxkZWNvZGUoZmlsZSgiLi9zZXR0aW5ncy9rdWJlcm5ldGVzLnlhbWwiKSkKICBzb2Z0d2FyZSAgICAgICA9IHlhbWxkZWNvZGUoZmlsZSgiLi9zZXR0aW5ncy9zb2Z0d2FyZS55YW1sIikpCiAgdXRpbGl0aWVzICAgICAgPSB5YW1sZGVjb2RlKGZpbGUoIi4vc2V0dGluZ3MvdXRpbGl0aWVzLnlhbWwiKSkKfQoKbW9kdWxlICJjb25maWd1cmF0aW9uX2t1YmVfc2VjcmV0cyIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvY29uZmlndXJhdGlvbi1rdWJlLXNlY3JldHMiCiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBsYWJlbHMgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubGFiZWxzCiAgc2VjdXJpdHkgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnNlY3VyaXR5CiAgc2VjcmV0cyAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnNlY3JldHMKICBhZG1pbnMgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYWRtaW5zCiAgdXNlcnMgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnVzZXJzCiAgcHJvdmlkZXJzID0gewogICAgYXdzLnJvb3QgPSBhd3Mucm9vdAogIH0KfQoKbW9kdWxlICJjb25maWd1cmF0aW9uX2t1YmVfaW5mcmFzdHJ1Y3R1cmUiIHsKICBzb3VyY2UgICAgICAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvY29uZmlndXJhdGlvbi1rdWJlLWluZnJhc3RydWN0dXJlIgogIGxhYmVscyAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwogIGJ1Y2tldHMgICAgICAgPSBsb2NhbC5hd3NfYnVja2V0cwogIGltYWdlcyAgICAgICAgPSBsb2NhbC5oY2xvdWRfaW1hZ2VzCiAgbWFpbl9ncm91cHMgICA9IGxvY2FsLmhjbG91ZF9tYWluX25vZGVfZ3JvdXBzCiAgd29ya2VyX2dyb3VwcyA9IGxvY2FsLmhjbG91ZF93b3JrZXJfbm9kZV9ncm91cHMKICBiYWxhbmNlcnMgICAgID0gbG9jYWwuaGNsb3VkX2xvYWRfYmFsYW5jZXJzCiAgbmV0d29yayAgICAgICA9IGxvY2FsLmhjbG91ZF9uZXR3b3JrCiAga2V5ICAgICAgICAgICA9IGxvY2FsLmhjbG91ZF9rZXkKfQo=
+INFRASTRUCTURE_HCLOUD_FILE=bG9jYWxzIHsKICBhd3NfYWNjb3VudCAgICAgICAgICAgICAgID0gbW9kdWxlLmluZnJhc3RydWN0dXJlX2F3c19hY2NvdW50CiAgYXdzX2RucyAgICAgICAgICAgICAgICAgICA9IG1vZHVsZS5pbmZyYXN0cnVjdHVyZV9hd3NfZG5zCiAgYXdzX2VtYWlsICAgICAgICAgICAgICAgICA9IG1vZHVsZS5pbmZyYXN0cnVjdHVyZV9hd3NfZW1haWwKICBhd3NfYnVja2V0cyAgICAgICAgICAgICAgID0gbW9kdWxlLmluZnJhc3RydWN0dXJlX2F3c19idWNrZXRzCiAgaGNsb3VkX2Nvc3RzICAgICAgICAgICAgICA9IG1vZHVsZS5pbmZyYXN0cnVjdHVyZV9oY2xvdWRfY29zdHMKICBoY2xvdWRfaW1hZ2VzICAgICAgICAgICAgID0gbW9kdWxlLmluZnJhc3RydWN0dXJlX2hjbG91ZF9pbWFnZXMKICBoY2xvdWRfa2V5ICAgICAgICAgICAgICAgID0gbW9kdWxlLmluZnJhc3RydWN0dXJlX2hjbG91ZF9rZXkKICBoY2xvdWRfbmV0d29yayAgICAgICAgICAgID0gbW9kdWxlLmluZnJhc3RydWN0dXJlX2hjbG91ZF9uZXR3b3JrCiAgaGNsb3VkX2xvYWRfYmFsYW5jZXJzICAgICA9IG1vZHVsZS5pbmZyYXN0cnVjdHVyZV9oY2xvdWRfbG9hZF9iYWxhbmNlcnMKICBoY2xvdWRfZmlyZXdhbGxzICAgICAgICAgID0gbW9kdWxlLmluZnJhc3RydWN0dXJlX2hjbG91ZF9maXJld2FsbHMKICBoY2xvdWRfbWFpbl9ub2RlX2dyb3VwcyAgID0gbW9kdWxlLmluZnJhc3RydWN0dXJlX2hjbG91ZF9tYWluX25vZGVfZ3JvdXBzCiAgaGNsb3VkX3dvcmtlcl9ub2RlX2dyb3VwcyA9IG1vZHVsZS5pbmZyYXN0cnVjdHVyZV9oY2xvdWRfd29ya2VyX25vZGVfZ3JvdXBzCiAgaGNsb3VkX3JkbnMgICAgICAgICAgICAgICA9IG1vZHVsZS5pbmZyYXN0cnVjdHVyZV9oY2xvdWRfcmRucwp9Cgptb2R1bGUgImluZnJhc3RydWN0dXJlX2F3c19hY2NvdW50IiB7CiAgc291cmNlICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL2luZnJhc3RydWN0dXJlLWF3cy1hY2NvdW50IgogIGNsdXN0ZXIgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBsYWJlbHMgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5sYWJlbHMKICBwcm92aWRlcnMgPSB7CiAgICBhd3Mucm9vdCA9IGF3cy5yb290CiAgfQp9Cgptb2R1bGUgImluZnJhc3RydWN0dXJlX2F3c19kbnMiIHsKICBzb3VyY2UgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9pbmZyYXN0cnVjdHVyZS1hd3MtZG5zIgogIGNsdXN0ZXIgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubGFiZWxzCiAgcmVjb3JkcyAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5kbnMucmVjb3JkcwogIHpvbmVfaWQgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3Muc2V0dGluZ3MuYXdzLnpvbmVfaWQKICBiYWxhbmNlcnMgPSBsb2NhbC5rdWJlX2luZnJhc3RydWN0dXJlLmJhbGFuY2VycwogIHByb3ZpZGVycyA9IHsKICAgIGF3cyAgICAgID0gYXdzCiAgICBhd3Mucm9vdCA9IGF3cy5yb290CiAgfQp9Cgptb2R1bGUgImluZnJhc3RydWN0dXJlX2F3c19lbWFpbCIgewogIHNvdXJjZSAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9pbmZyYXN0cnVjdHVyZS1hd3MtZW1haWwiCiAgY2x1c3RlciA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwogIGVtYWlscyAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmVtYWlscwogIHpvbmVfaWQgPSBsb2NhbC5hd3NfZG5zLnpvbmVfaWQKfQoKbW9kdWxlICJpbmZyYXN0cnVjdHVyZV9hd3NfYnVja2V0cyIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvaW5mcmFzdHJ1Y3R1cmUtYXdzLWJ1Y2tldCIKICBmb3JfZWFjaCA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYnVja2V0cwogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgc2V0dGluZ3MgPSBlYWNoLnZhbHVlCn0KCm1vZHVsZSAiaW5mcmFzdHJ1Y3R1cmVfaGNsb3VkX2Nvc3RzIiB7CiAgc291cmNlICAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvaW5mcmFzdHJ1Y3R1cmUtaGNsb3VkLWNvc3RzIgogIGhjbG91ZCAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3Muc2V0dGluZ3MuaGNsb3VkCiAgc2VjcmV0cyAgID0gbG9jYWwua3ViZV9zZWNyZXRzCiAgaW1hZ2VzICAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5pbWFnZXMKICBub2RlcyAgICAgPSBsb2NhbC5rdWJlX2luZnJhc3RydWN0dXJlLm5vZGVzCiAgYmFsYW5jZXJzID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5iYWxhbmNlcnMKfQoKbW9kdWxlICJpbmZyYXN0cnVjdHVyZV9oY2xvdWRfaW1hZ2VzIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9pbmZyYXN0cnVjdHVyZS1oY2xvdWQtaW1hZ2UiCiAgZm9yX2VhY2ggPSBsb2NhbC5rdWJlX3NldHRpbmdzLmltYWdlcwogIGhjbG91ZCAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5zZXR0aW5ncy5oY2xvdWQKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIHNldHRpbmdzID0gZWFjaC52YWx1ZQp9Cgptb2R1bGUgImluZnJhc3RydWN0dXJlX2hjbG91ZF9rZXkiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL2luZnJhc3RydWN0dXJlLWhjbG91ZC1rZXkiCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmtleQogIHNlY3JldHMgID0gbG9jYWwua3ViZV9zZWNyZXRzCn0KCm1vZHVsZSAiaW5mcmFzdHJ1Y3R1cmVfaGNsb3VkX25ldHdvcmsiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL2luZnJhc3RydWN0dXJlLWhjbG91ZC1uZXR3b3JrIgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5uZXR3b3JrCiAgaGNsb3VkICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnNldHRpbmdzLmhjbG91ZAp9Cgptb2R1bGUgImluZnJhc3RydWN0dXJlX2hjbG91ZF9sb2FkX2JhbGFuY2VycyIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvaW5mcmFzdHJ1Y3R1cmUtaGNsb3VkLWxvYWQtYmFsYW5jZXIiCiAgZm9yX2VhY2ggPSBsb2NhbC5rdWJlX3NldHRpbmdzLmJhbGFuY2VycwogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbG9jYXRpb24gPSBsb2NhbC5rdWJlX3NldHRpbmdzLnNldHRpbmdzLmhjbG91ZC5sb2NhdGlvbgogIHN1Ym5ldCAgID0gbG9jYWwuaGNsb3VkX25ldHdvcmsuc3VibmV0X2lkCiAgc2V0dGluZ3MgPSBlYWNoLnZhbHVlCn0KCm1vZHVsZSAiaW5mcmFzdHJ1Y3R1cmVfaGNsb3VkX2ZpcmV3YWxscyIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvaW5mcmFzdHJ1Y3R1cmUtaGNsb3VkLWZpcmV3YWxsIgogIGZvcl9lYWNoID0gbG9jYWwua3ViZV9zZXR0aW5ncy5maXJld2FsbHMKICBuZXR3b3JrICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubmV0d29yawogIG5vZGVzICAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5ub2RlcwogIHNldHRpbmdzID0gZWFjaC52YWx1ZQp9Cgptb2R1bGUgImluZnJhc3RydWN0dXJlX2hjbG91ZF9tYWluX25vZGVfZ3JvdXBzIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9pbmZyYXN0cnVjdHVyZS1oY2xvdWQtbm9kZS1ncm91cCIKICBmb3JfZWFjaCA9IGxvY2FsLmt1YmVfc2V0dGluZ3Mubm9kZXMubWFpbgogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgc2VjcmV0cyAgPSBsb2NhbC5rdWJlX3NlY3JldHMKICBuZXR3b3JrICA9IGxvY2FsLmhjbG91ZF9uZXR3b3JrCiAgaW1hZ2VzICAgPSBsb2NhbC5oY2xvdWRfaW1hZ2VzCiAga2V5ICAgICAgPSBsb2NhbC5oY2xvdWRfa2V5CiAgc2V0dGluZ3MgPSBlYWNoLnZhbHVlCiAgdHlwZSAgICAgPSAibWFpbiIKfQoKbW9kdWxlICJpbmZyYXN0cnVjdHVyZV9oY2xvdWRfd29ya2VyX25vZGVfZ3JvdXBzIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9pbmZyYXN0cnVjdHVyZS1oY2xvdWQtbm9kZS1ncm91cCIKICBmb3JfZWFjaCA9IGxvY2FsLmt1YmVfc2V0dGluZ3Mubm9kZXMud29ya2VyCiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIG5ldHdvcmsgID0gbG9jYWwuaGNsb3VkX25ldHdvcmsKICBpbWFnZXMgICA9IGxvY2FsLmhjbG91ZF9pbWFnZXMKICBrZXkgICAgICA9IGxvY2FsLmhjbG91ZF9rZXkKICBzZXR0aW5ncyA9IGVhY2gudmFsdWUKICB0eXBlICAgICA9ICJ3b3JrZXIiCn0KCm1vZHVsZSAiaW5mcmFzdHJ1Y3R1cmVfaGNsb3VkX3JkbnMiIHsKICBzb3VyY2UgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9pbmZyYXN0cnVjdHVyZS1oY2xvdWQtcmRucyIKICBiYWxhbmNlcnMgPSBsb2NhbC5oY2xvdWRfbG9hZF9iYWxhbmNlcnMKfQo=
+KUBERNETES_HCLOUD_FILE=bG9jYWxzIHsKICBrOHNfaW5pdCAgICAgICAgICAgICAgPSBtb2R1bGUua3ViZXJuZXRlc19rOHNfaW5pdAogIGs4c19qb2luICAgICAgICAgICAgICA9IG1vZHVsZS5rdWJlcm5ldGVzX2s4c19qb2luCiAgaGNsb3VkX2NjbSAgICAgICAgICAgID0gbW9kdWxlLmt1YmVybmV0ZXNfaGNsb3VkX2NjbQogIGhjbG91ZF9jc2kgICAgICAgICAgICA9IG1vZHVsZS5rdWJlcm5ldGVzX2hjbG91ZF9jc2kKICByb29rX2NlcGggICAgICAgICAgICAgPSBtb2R1bGUua3ViZXJuZXRlc19yb29rX2NlcGgKICBuZ2lueF9pbmdyZXNzICAgICAgICAgPSBtb2R1bGUua3ViZXJuZXRlc19uZ2lueF9pbmdyZXNzCiAgamV0c3RhY2tfY2VydF9tYW5hZ2VyID0gbW9kdWxlLmt1YmVybmV0ZXNfamV0c3RhY2tfY2VydF9tYW5hZ2VyCiAgdm13YXJlX3ZlbGVybyAgICAgICAgID0gbW9kdWxlLmt1YmVybmV0ZXNfdm13YXJlX3ZlbGVybwp9Cgptb2R1bGUgImt1YmVybmV0ZXNfazhzX2luaXQiIHsKICBzb3VyY2UgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMva3ViZXJuZXRlcy1rOHMtaW5pdCIKICBjbHVzdGVyID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbGFiZWxzICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubGFiZWxzCiAgbmV0d29yayA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubmV0d29yawogIGtleXMgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMua2V5cwogIHByaW1hcnkgPSBsb2NhbC5rdWJlX2luZnJhc3RydWN0dXJlLnByaW1hcnkKICBpbWFnZXMgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5pbWFnZXMKfQoKbW9kdWxlICJrdWJlcm5ldGVzX2s4c19qb2luIiB7CiAgc291cmNlICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL2t1YmVybmV0ZXMtazhzLWpvaW4iCiAgY2x1c3RlciA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwogIGtleXMgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMua2V5cwogIGluaXQgICAgPSBsb2NhbC5rOHNfaW5pdAogIHByaW1hcnkgPSBsb2NhbC5rdWJlX2luZnJhc3RydWN0dXJlLnByaW1hcnkKICBtYWluICAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5ub25wcmltYXJ5CiAgd29ya2VyICA9IGxvY2FsLmt1YmVfaW5mcmFzdHJ1Y3R1cmUud29ya2VyCn0KCm1vZHVsZSAia3ViZXJuZXRlc19oY2xvdWRfY2NtIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9rdWJlcm5ldGVzLWhjbG91ZC1jY20iCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnN5c3RlbS5oY2xvdWRfY2NtCiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBsb2NhdGlvbiA9IGxvY2FsLmt1YmVfc2V0dGluZ3Muc2V0dGluZ3MuaGNsb3VkLmxvY2F0aW9uCiAgc2VjcmV0cyAgPSBsb2NhbC5rdWJlX3NlY3JldHMKICBuZXR3b3JrICA9IGxvY2FsLmt1YmVfaW5mcmFzdHJ1Y3R1cmUubmV0d29yawp9Cgptb2R1bGUgImt1YmVybmV0ZXNfaGNsb3VkX2NzaSIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMva3ViZXJuZXRlcy1oY2xvdWQtY3NpIgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5zeXN0ZW0uaGNsb3VkX2NzaQogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgc2VjcmV0cyAgPSBsb2NhbC5rdWJlX3NlY3JldHMKfQoKbW9kdWxlICJrdWJlcm5ldGVzX3Jvb2tfY2VwaCIgewogIHNvdXJjZSAgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9rdWJlcm5ldGVzLXJvb2stY2VwaCIKICBzZXR0aW5ncyAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5zeXN0ZW0ucm9va19jZXBoCiAgY2x1c3RlciAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHVzZXJzICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnVzZXJzCiAgd29ya2VyX2dyb3VwcyA9IGxvY2FsLmt1YmVfc2V0dGluZ3Mubm9kZXMud29ya2VyCiAgc2VjcmV0cyAgICAgICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgImt1YmVybmV0ZXNfbmdpbnhfaW5ncmVzcyIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMva3ViZXJuZXRlcy1uZ2lueC1pbmdyZXNzIgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5zeXN0ZW0ubmdpbnhfaW5ncmVzcwogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgYmFsYW5jZXIgPSBsb2NhbC5rdWJlX2luZnJhc3RydWN0dXJlLndvcmtlcl9iYWxhbmNlcgp9Cgptb2R1bGUgImt1YmVybmV0ZXNfamV0c3RhY2tfY2VydF9tYW5hZ2VyIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9rdWJlcm5ldGVzLWpldHN0YWNrLWNlcnQtbWFuYWdlciIKICBzZXR0aW5ncyA9IGxvY2FsLmt1YmVfc2V0dGluZ3Muc3lzdGVtLmpldHN0YWNrX2NlcnRfbWFuYWdlcgogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgaW5ncmVzcyAgPSBsb2NhbC5uZ2lueF9pbmdyZXNzCn0KCm1vZHVsZSAia3ViZXJuZXRlc192bXdhcmVfdmVsZXJvIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9rdWJlcm5ldGVzLXZtd2FyZS12ZWxlcm8iCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnN5c3RlbS52bXdhcmVfdmVsZXJvCiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBleGNsdWRlICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuZXhjbHVkZQogIGJ1Y2tldCAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS52ZWxlcm9fYnVja2V0Cn0K
+SOFTWARE_HCLOUD_FILE=bG9jYWxzIHsKICBrOHNfZGFzaGJvYXJkICAgICAgID0gbW9kdWxlLnNvZnR3YXJlX2s4c19kYXNoYm9hcmQKICBoYXNoaWNvcnBfdmF1bHQgICAgID0gbW9kdWxlLnNvZnR3YXJlX2hhc2hpY29ycF92YXVsdAogIG1pbmlvX2NvbnNvbGUgICAgICAgPSBtb2R1bGUuc29mdHdhcmVfbWluaW9fY29uc29sZQogIG9uZXBhc3N3b3JkX2Nvbm5lY3QgPSBtb2R1bGUuc29mdHdhcmVfb25lcGFzc3dvcmRfY29ubmVjdAogIGRvY2tlcl9yZWdpc3RyeSAgICAgPSBtb2R1bGUuc29mdHdhcmVfZG9ja2VyX3JlZ2lzdHJ5CiAgaGVsbV9jaGFydG11c2V1bSAgICA9IG1vZHVsZS5zb2Z0d2FyZV9oZWxtX2NoYXJ0bXVzZXVtCiAgZ2l0bGFiX2NpICAgICAgICAgICA9IG1vZHVsZS5zb2Z0d2FyZV9naXRsYWJfY2kKICBwcm9tZXRoZXVzX3N0YWNrICAgID0gbW9kdWxlLnNvZnR3YXJlX3Byb21ldGhldXNfc3RhY2sKICBlbGFzdGljX3N0YWNrICAgICAgID0gbW9kdWxlLnNvZnR3YXJlX2VsYXN0aWNfc3RhY2sKfQoKbW9kdWxlICJzb2Z0d2FyZV9rOHNfZGFzaGJvYXJkIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1rOHMtZGFzaGJvYXJkIgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMuazhzX2Rhc2hib2FyZAogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbGFiZWxzICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwp9Cgptb2R1bGUgInNvZnR3YXJlX2hhc2hpY29ycF92YXVsdCIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtaGFzaGljb3JwLXZhdWx0IgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMuaGFzaGljb3JwX3ZhdWx0CiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInNvZnR3YXJlX21pbmlvX2NvbnNvbGUiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3NvZnR3YXJlLW1pbmlvLWNvbnNvbGUiCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5taW5pb19jb25zb2xlCiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInNvZnR3YXJlX29uZXBhc3N3b3JkX2Nvbm5lY3QiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3NvZnR3YXJlLW9uZXBhc3N3b3JkLWNvbm5lY3QiCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5vbmVwYXNzd29yZF9jb25uZWN0CiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInNvZnR3YXJlX2RvY2tlcl9yZWdpc3RyeSIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtZG9ja2VyLXJlZ2lzdHJ5IgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMuZG9ja2VyX3JlZ2lzdHJ5CiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIGJ1Y2tldCAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5kb2NrZXJfYnVja2V0Cn0KCm1vZHVsZSAic29mdHdhcmVfaGVsbV9jaGFydG11c2V1bSIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtaGVsbS1jaGFydG11c2V1bSIKICBzZXR0aW5ncyA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLmhlbG1fY2hhcnRtdXNldW0KICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHNlY3JldHMgID0gbG9jYWwua3ViZV9zZWNyZXRzCiAgYnVja2V0ICAgPSBsb2NhbC5rdWJlX2luZnJhc3RydWN0dXJlLmhlbG1fYnVja2V0Cn0KCm1vZHVsZSAic29mdHdhcmVfZ2l0bGFiX2NpIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1naXRsYWItY2kiCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5naXRsYWJfY2kKICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5sYWJlbHMKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIGJ1Y2tldCAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5naXRsYWJfYnVja2V0Cn0KCm1vZHVsZSAic29mdHdhcmVfcHJvbWV0aGV1c19zdGFjayIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtcHJvbWV0aGV1cy1zdGFjayIKICBzZXR0aW5ncyA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLnByb21ldGhldXNfc3RhY2sKICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHNlY3JldHMgID0gbG9jYWwua3ViZV9zZWNyZXRzCn0KCm1vZHVsZSAic29mdHdhcmVfZWxhc3RpY19zdGFjayIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtZWxhc3RpYy1zdGFjayIKICBzZXR0aW5ncyA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLmVsYXN0aWNfc3RhY2sKICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHNlY3JldHMgID0gbG9jYWwua3ViZV9zZWNyZXRzCn0KCm1vZHVsZSAic29mdHdhcmVfYml0bmFtaV9waHBteWFkbWluIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1iaXRuYW1pLXBocG15YWRtaW4iCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5iaXRuYW1pX3BocG15YWRtaW4KICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3Rlcgp9Cgptb2R1bGUgInNvZnR3YXJlX3J1bml4X3BnYWRtaW4iIHsKICBzb3VyY2UgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1ydW5peC1wZ2FkbWluIgogIHNldHRpbmdzICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLnJ1bml4X3BnYWRtaW4KICBjbHVzdGVyICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICB1c2VycyAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnVzZXJzCiAgYXBwbGljYXRpb25zID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMKICBzZWNyZXRzICAgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMKfQo=
+UTILITIES_HCLOUD_FILE=bG9jYWxzIHsKICBrdWJlX3VzZXJzICAgICAgICAgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfdXNlcnMKICBrdWJlX2FkbWlucyAgICAgICAgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfYWRtaW5zCiAga3ViZV9kZXZlbG9wZXJzICAgID0gbW9kdWxlLnV0aWxpdGllc19rdWJlX2RldmVsb3BlcnMKICBrdWJlX3ZpZXdlcnMgICAgICAgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfdmlld2VycwogIGt1YmVfcHJvamVjdHMgICAgICA9IG1vZHVsZS51dGlsaXRpZXNfa3ViZV9wcm9qZWN0cwogIGt1YmVfZW52aXJvbm1lbnRzICA9IG1vZHVsZS51dGlsaXRpZXNfa3ViZV9lbnZpcm9ubWVudHMKICBrdWJlX29yZ2FuaXphdGlvbnMgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfb3JnYW5pemF0aW9ucwogIGt1YmVfY2x1c3RlciAgICAgICA9IG1vZHVsZS51dGlsaXRpZXNfa3ViZV9jbHVzdGVyCiAga3ViZV9vcGVyYXRvciAgICAgID0gbW9kdWxlLnV0aWxpdGllc19rdWJlX29wZXJhdG9yCn0KCm1vZHVsZSAidXRpbGl0aWVzX2t1YmVfY2x1c3RlciIgewogIHNvdXJjZSAgICAgICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLWNsdXN0ZXIiCiAgY2x1c3RlciAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbGFiZWxzICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5sYWJlbHMKICB1c2VycyAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnVzZXJzCiAgaW1hZ2VzICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5kb2NrZXJfaW1hZ2VzCiAgY2hhcnRzICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5oZWxtX2NoYXJ0cwogIHZlcnNpb25zICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MudmVyc2lvbnMKICByZXBvc2l0b3JpZXMgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmhlbG1fcmVwb3NpdG9yaWVzCiAgc2VjcmV0cyAgICAgICAgID0gbG9jYWwua3ViZV9zZWNyZXRzCiAgY29zdHMgICAgICAgICAgID0gbG9jYWwuaGNsb3VkX2Nvc3RzLmNvc3RzCiAgdmF1bHQgICAgICAgICAgID0gbG9jYWwuaGFzaGljb3JwX3ZhdWx0CiAgaGVsbSAgICAgICAgICAgID0gbG9jYWwuaGVsbV9jaGFydG11c2V1bQogIGdyYWZhbmFfdXNlcnMgICA9IGxvY2FsLmt1YmVfdXNlcnMuZ3JhZmFuYV91c2VycwogIG5vZGVwaW5nX3Bob25lcyA9IGxvY2FsLmt1YmVfdXNlcnMubm9kZXBpbmdfcGhvbmVzCiAgbm9kZXBpbmdfZW1haWxzID0gbG9jYWwua3ViZV91c2Vycy5ub2RlcGluZ19lbWFpbHMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV91c2VycyIgewogIHNvdXJjZSAgICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLXVzZXJzIgogIGNsdXN0ZXIgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubGFiZWxzCiAgdXNlcnMgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy51c2VycwogIGNvbnRhY3RzICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY29udGFjdHMKICBzeXN0ZW0gICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnN5c3RlbQogIG9wZXJhdG9yICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3Mub3BlcmF0b3IKICBhcHBsaWNhdGlvbnMgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucwogIHNlY3JldHMgICAgICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInV0aWxpdGllc19rdWJlX2FkbWlucyIgewogIHNvdXJjZSAgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy91dGlsaXRpZXMta3ViZS1hZG1pbnMiCiAgY2x1c3RlciAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGFkbWlucyAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFkbWlucwogIGFwcGxpY2F0aW9ucyAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucwogIHNlY3JldHMgICAgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMKICBub2RlcyAgICAgICAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5ub2RlcwogIHZhdWx0X21vdW50cyAgPSBsb2NhbC5rdWJlX3VzZXJzLnZhdWx0X21vdW50cwogIG1pbmlvX2J1Y2tldHMgPSBsb2NhbC5rdWJlX3VzZXJzLm1pbmlvX2J1Y2tldHMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV9kZXZlbG9wZXJzIiB7CiAgc291cmNlICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLWRldmVsb3BlcnMiCiAgY2x1c3RlciAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGRldmVsb3BlcnMgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmRldmVsb3BlcnMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV92aWV3ZXJzIiB7CiAgc291cmNlICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLXZpZXdlcnMiCiAgY2x1c3RlciA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHZpZXdlcnMgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnZpZXdlcnMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV9wcm9qZWN0cyIgewogIHNvdXJjZSAgICAgICAgICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLXByb2plY3RzIgogIGNsdXN0ZXIgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubGFiZWxzCiAgcHJvamVjdHMgICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5wcm9qZWN0cwogIHZlcnNpb25zICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MudmVyc2lvbnMKICBxdW90YXMgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnF1b3RhcwogIGltYWdlcyAgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuZG9ja2VyX2ltYWdlcwogIHNlY3JldHMgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIHZhdWx0ICAgICAgICAgICAgICA9IGxvY2FsLmhhc2hpY29ycF92YXVsdAogIG1pbmlvICAgICAgICAgICAgICA9IGxvY2FsLm1pbmlvX2NvbnNvbGUKICBkb2NrZXIgICAgICAgICAgICAgPSBsb2NhbC5kb2NrZXJfcmVnaXN0cnkKICBnaXRsYWJfdXNlcnMgICAgICAgPSBsb2NhbC5rdWJlX3VzZXJzLmdpdGxhYl91c2VycwogIGdpdGxhYl9ncm91cHMgICAgICA9IGxvY2FsLmt1YmVfb3JnYW5pemF0aW9ucy5naXRsYWJfZ3JvdXBzCiAgZ3JhZmFuYV91c2VycyAgICAgID0gbG9jYWwua3ViZV91c2Vycy5ncmFmYW5hX3VzZXJzCiAgZ3JhZmFuYV9kYXNoYm9hcmRzID0gbG9jYWwua3ViZV9jbHVzdGVyLmdyYWZhbmFfZGFzaGJvYXJkcwogIG5vZGVwaW5nX3Bob25lcyAgICA9IGxvY2FsLmt1YmVfdXNlcnMubm9kZXBpbmdfcGhvbmVzCiAgbm9kZXBpbmdfZW1haWxzICAgID0gbG9jYWwua3ViZV91c2Vycy5ub2RlcGluZ19lbWFpbHMKICBub2RlcGluZ19zbGFjayAgICAgPSBsb2NhbC5rdWJlX2NsdXN0ZXIubm9kZXBpbmdfc2xhY2sKICBkb2NrZXJfaW1hZ2VzICAgICAgPSBsb2NhbC5rdWJlX2NsdXN0ZXIuZG9ja2VyX2ltYWdlcwp9Cgptb2R1bGUgInV0aWxpdGllc19rdWJlX2Vudmlyb25tZW50cyIgewogIHNvdXJjZSAgICAgICAgICAgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy91dGlsaXRpZXMta3ViZS1lbnZpcm9ubWVudHMiCiAgY2x1c3RlciAgICAgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgICAgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwogIHF1b3RhcyAgICAgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnF1b3RhcwogIGVudmlyb25tZW50cyAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmVudmlyb25tZW50cwogIHNlY3JldHMgICAgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMKICB2ZWxlcm8gICAgICAgICAgICAgICAgID0gbG9jYWwudm13YXJlX3ZlbGVybwogIGdpdGxhYiAgICAgICAgICAgICAgICAgPSBsb2NhbC5naXRsYWJfY2kKICBtaW5pb19zZXJ2aWNlX2FjY291bnRzID0gbG9jYWwua3ViZV9wcm9qZWN0cy5taW5pb19zZXJ2aWNlX2FjY291bnRzCiAgZ2l0bGFiX3Byb2plY3RzICAgICAgICA9IGxvY2FsLmt1YmVfcHJvamVjdHMuZ2l0bGFiX3Byb2plY3RzCn0KCm1vZHVsZSAidXRpbGl0aWVzX2t1YmVfb3JnYW5pemF0aW9ucyIgewogIHNvdXJjZSAgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy91dGlsaXRpZXMta3ViZS1vcmdhbml6YXRpb25zIgogIGNsdXN0ZXIgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBvcmdhbml6YXRpb25zID0gbG9jYWwua3ViZV9zZXR0aW5ncy5vcmdhbml6YXRpb25zCiAgZ2l0bGFiX3VzZXJzICA9IGxvY2FsLmt1YmVfdXNlcnMuZ2l0bGFiX3VzZXJzCn0KCm1vZHVsZSAidXRpbGl0aWVzX2t1YmVfb3BlcmF0b3IiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLW9wZXJhdG9yIgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5vcGVyYXRvcgogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbGFiZWxzICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwogIGltYWdlcyAgID0gbG9jYWwua3ViZV9jbHVzdGVyLmRvY2tlcl9pbWFnZXMKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIHJlZ2lzdHJ5ID0gbG9jYWwuZG9ja2VyX3JlZ2lzdHJ5CiAgbWluaW8gICAgPSBsb2NhbC5taW5pb19jb25zb2xlCiAgZ2l0bGFiICAgPSBsb2NhbC5naXRsYWJfY2kKfQo=
+
+
+function kube_startup() {
+  VALIDATTE_VERSION='^([0-9]+\.){0,2}(\*|[0-9]+)$'
+  if [[ $KUBE_LATEST_VERSION =~ $VALIDATTE_VERSION ]]
+  then
+    if [ -z "${KUBE_LATEST_VERSION}" ]
+    then
+      echo "Unable to check for latest kube version, check your internet connection..."
+      exit 1
+    fi
+    if [ "${KUBE_VERSION}" != "${KUBE_LATEST_VERSION}" ]
+    then
+      echo "Kube version ${KUBE_VERSION} is not the latest version: ${KUBE_LATEST_VERSION}"
+      TMP_KUBE_EXE=$(mktemp)
+      curl -s https://raw.githubusercontent.com/colab-coop/kube/main/kube --output ${TMP_KUBE_EXE}
+      yes | cp -rf ${TMP_KUBE_EXE} /usr/local/bin/kube
+      rm -rf ${TMP_KUBE_EXE}
+      echo "Kube version ${KUBE_LATEST_VERSION} installed, you are ready to go..."
+      exit 1
+    fi
+  else
+    echo "Unable to validate Kube version: '${KUBE_LATEST_VERSION}'"
+    exit 1
+  fi
+  if [ ! -d "${CACHE_DIR}" ]
+  then
+    mkdir -p ${CACHE_DIR}
+  fi
+  if [ ! -f "${CACHE_DIR}/cache" ]
+  then
+    echo "{}" | base64 > "${CACHE_DIR}/cache"
+  fi
+  JSON_CACHE=$(cat ${CACHE_DIR}/cache | base64 -d)
+  if [ -z "${JSON_CACHE}" ]
+  then
+    echo "{}" | base64 > "${CACHE_DIR}/cache"
+  fi
+  if [[ $(echo "${JSON_CACHE}" | jq) != "${JSON_CACHE}" ]]
+  then
+    echo "{}" | base64 > "${CACHE_DIR}/cache"
+  fi
+  JSON_CACHE=$(cat ${CACHE_DIR}/cache | base64 -d)
+}
+
+function kube_dev_get_cluster() {
+  if [ -z "$(echo "${JSON_CACHE}" | jq '.default')" ]
+  then
+    echo "No cluster configuration present."
+    exit 1
+  fi
+  echo "${JSON_CACHE}" | jq --arg cluster "$1" '.[$cluster]'
+}
+
+function kube_dev_get_default_cluster() {
+  if [ -z "$(echo "${JSON_CACHE}" | jq '.default')" ]
+  then
+    echo "No cluster configuration present."
+    exit 1
+  fi
+  echo "${JSON_CACHE}" | jq --arg default "$(echo "${JSON_CACHE}" | jq '.default' | tr -d '"' )" '.[$default]'
+}
+
+function kube_dev_auth_vault() {
+  local VAULT_URL=$(kube_dev_get_default_cluster | jq '.vault_url' | tr -d '"')
+  local VAULT_USERNAME=$(kube_dev_get_default_cluster | jq '.vault_username' | tr -d '"')
+  local VAULT_PASSWORD=$(kube_dev_get_default_cluster | jq '.vault_password' | tr -d '"')
+  [ -z "$VAULT_URL" ] && { echo "Error reading vault URL from cache"; exit 1; }
+  [ -z "$VAULT_USERNAME" ] && { echo "Error reading vault username from cache"; exit 1; }
+  [ -z "$VAULT_PASSWORD" ] && { echo "Error reading vault password from cache"; exit 1; }
+  local VAULT_TOKEN=$(curl -s \
+    --request POST \
+    --data "{\"password\":\"${VAULT_PASSWORD}\"}" \
+    "${VAULT_URL}v1/auth/userpass/login/${VAULT_USERNAME}" | jq '.auth.client_token' | tr -d '"')
+  echo "${VAULT_TOKEN}" | base64 > "${CACHE_DIR}/token"
+}
+
+function kube_dev_get_or_create_vault_token() {
+  local VAULT_TOKEN=$(cat ${CACHE_DIR}/token | base64 -d)
+  local VAULT_URL=$(kube_dev_get_default_cluster | jq '.vault_url' | tr -d '"')
+  local VAULT_USERNAME=$(kube_dev_get_default_cluster | jq '.vault_username' | tr -d '"')
+  local VAULT_PASSWORD=$(kube_dev_get_default_cluster | jq '.vault_password' | tr -d '"')
+  [ -z "$VAULT_URL" ] && { echo "Error reading vault URL from cache"; exit 1; }
+  [ -z "$VAULT_USERNAME" ] && { echo "Error reading vault username from cache"; exit 1; }
+  [ -z "$VAULT_PASSWORD" ] && { echo "Error reading vault password from cache"; exit 1; }
+  if [ -z "${VAULT_TOKEN}" ]
+  then
+    echo "Authenticating Vault"
+    kube_dev_auth_vault
+    local VAULT_TOKEN=$(cat ${CACHE_DIR}/token | base64 -d)
+  fi
+  local VAULT_USER=$(curl -s \
+    --header "X-Vault-Token: ${VAULT_TOKEN}" \
+    "${VAULT_URL}v1/auth/userpass/users/${VAULT_USERNAME}" | jq '.data')
+  if [ -z "${VAULT_USER}" ]
+  then
+    echo "Authenticating Vault"
+    kube_dev_auth_vault
+    local VAULT_TOKEN=$(cat ${CACHE_DIR}/token | base64 -d)
+  fi
+}
+
+function kube_install_nodeping_provider() {
+  local INSTALL_DIR=/tmp/terraform-nodeping
+  local PROVIDER_DIR=~/.terraform.d/plugins/softkraft.co/terraform/nodeping/0.0.1
+  local PROVIDER_REPO=https://github.com/softkraftco/terraform-nodeping.git
+  local OS_ARCHS=(linux_amd64 darwin_amd64 linux_arm64 darwin_arm64)
+  for i in "${OS_ARCHS[@]}"
+  do
+    if [ ! -d "$PROVIDER_DIR/$i" ]
+    then
+      if [ -d "$INSTALL_DIR" ]
+      then
+        cd $INSTALL_DIR
+      else
+        git clone $PROVIDER_REPO $INSTALL_DIR && cd $INSTALL_DIR || exit 1
+      fi
+      echo "Installing 'nodeping' ($i) provider with make..."
+      OS_ARCH=$i make install &> /dev/null || exit 1
+    else
+      echo "'nodeping' ($i) provider already installed."
+    fi
+  done
+  rm -rf $INSTALL_DIR
+  cd $CURRENT_DIR
+}
+
+function kube_install_helm_deps() {
+  if [ -z "$(helm plugin list | grep cm-push)" ]
+  then
+    echo "Installing 'helm-push' with helm..."
+    helm plugin install https://github.com/chartmuseum/helm-push
+  else
+    echo "'helm-push' already installed."
+  fi
+}
+
+function kube_install_tf_deps() {
+  kube_install_nodeping_provider
+}
+
+function kube_install_go_deps() {
+  local GO_DEPS=(github.com/tmccombs/hcl2json github.com/terraform-docs/terraform-docs)
+  for i in "${GO_DEPS[@]}"
+  do
+    if ! command -v $(basename $i) &> /dev/null
+    then
+      echo "Installing '$(basename $i)' with go..."
+      go install $i &> /dev/null || exit 1
+    else
+      echo "'$(basename $i)' already installed."
+    fi
+  done
+}
+
+function kube_install_with_brew() {
+  local BREW_DEPS=(go git tfswitch kubectl jq yq helm docker)
+  for i in "${BREW_DEPS[@]}"
+  do
+    if ! command -v $i &> /dev/null
+    then
+      echo "Installing '$i' with brew..."
+      brew install $i &> /dev/null || exit 1
+    else
+      echo "'$i' already installed."
+    fi
+  done
+}
+
+function kube_install_with_apt() {
+  local APT_DEPS=(go git kubectl jq yq helm docker)
+  for i in "${APT_DEPS[@]}"
+  do
+    if ! command -v $i &> /dev/null
+    then
+      echo "Installing '$i' with apt..."
+      apt-get update &> /dev/null || exit 1
+      apt-get -y install $i &> /dev/null || exit 1
+    else
+      echo "'$i' already installed."
+    fi
+  done
+}
+
+function kube_install_with_yum() {
+  local YUM_DEPS=(go git kubectl jq yq helm docker)
+  for i in "${YUM_DEPS[@]}"
+  do
+    if ! command -v $i &> /dev/null
+    then
+      echo "Installing '$i' with yum..."
+      yum -y install $i &> /dev/null || exit 1
+    else
+      echo "'$i' already installed."
+    fi
+  done
+}
+
+function kube_install_with_bash() {
+  if ! command -v tfswitch &> /dev/null
+  then
+    echo "Installing 'tfswitch' with bash..."
+    curl -s -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash &> /dev/null || exit 1
+  else
+    echo "'tfswitch' already installed."
+  fi
+}
+
+function kube_install_os_deps() {
+  local OS=$(uname)
+  case ${OS} in
+		Darwin)
+      kube_install_with_brew
+			return
+			;;
+		Linux)
+      if [ -n "`which apt-get`" ]
+      then
+        kube_install_with_apt
+      elif [ -n "`which yum`" ]
+      then
+        kube_install_with_yum
+      fi
+      kube_install_with_bash
+			return
+			;;
+	esac
+	err "OS detected (${os}) is not supported."
+	exit 1
+}
+
+function kube_install_deps() {
+  echo "Installing dependencies..."
+  kube_install_os_deps
+  kube_install_go_deps
+  kube_install_tf_deps
+  kube_install_helm_deps
+}
+
+function kube_install() {
+  kube_install_deps
+  cd $REPO_DIR
+  if [ -f $(pwd)/kube ]
+  then
+    if [ -f /usr/local/bin/kube ]
+    then
+      if [ "$1" == "--force" ]
+      then
+        echo "Overwriting 'kube'..."
+        yes | cp -rf $(pwd)/kube /usr/local/bin/kube
+      else
+        echo "'kube' already installed."
+      fi
+    else
+      echo "Installing 'kube'..."
+      yes | cp -rf $(pwd)/kube /usr/local/bin/kube
+    fi
+  else
+    echo "Failed to install 'kube'."
+  fi
+  if [ -f /usr/local/bin/kube ]
+  then
+    chmod u+x /usr/local/bin/kube
+  else
+    echo "Failed to make 'kube' executable."
+  fi
+  cd $CURRENT_DIR
+}
+
+function kube_check_dependencies() {
+  if ! command -v kube &> /dev/null || ! command -v go &> /dev/null || ! command -v git &> /dev/null || ! command -v tfswitch &> /dev/null || ! command -v terraform &> /dev/null || ! command -v hcl2json &> /dev/null || ! command -v terraform-docs &> /dev/null
+  then
+    echo "Dependencies not found."
+    kube_install "$@"
+    exit
+  fi
+}
+
+function kube_check_if_cluster_dir() {
+  if [ ! -f $(pwd)/.terraform-kube ]
+  then
+    echo "Not a Kube Cluster Terraform directory, please select one."
+    local CLUSTERS=()
+    for dir in $REPO_DIR/terraform/clusters/*/*/*/.terraform-kube
+    do
+      dir=${dir%*/.terraform-kube}
+      CLUSTERS+=("${dir/$REPO_DIR\/terraform\/clusters\///}")
+    done
+    select cluster in "${CLUSTERS[@]}"
+    do
+      echo "Selected: $cluster"
+      CURRENT_DIR=$REPO_DIR/terraform/clusters$cluster
+      cd $CURRENT_DIR
+      break
+    done
+  fi
+  local CURRENT_VERSION=$(cat $CURRENT_DIR/.terraform-version)
+  local TERRAFORM_VERSION=${CURRENT_VERSION#"v"}
+  tfswitch $TERRAFORM_VERSION
+}
+
+function kube_check_if_repo_dir() {
+  if [ ! -f $REPO_DIR/kube ]
+  then
+    echo "Not inside a Kube repository directory."
+    exit 1
+  fi
+}
+
+function kube_init() {
+  terraform init "${@:2}"
+}
+
+function kube_upgrade() {
+  terraform init -upgrade "${@:2}"
+}
+
+function kube_validate() {
+  terraform validate "${@:2}"
+}
+
+function kube_output() {
+  terraform output "${@:2}"
+}
+
+function kube_plan() {
+  case "$1" in
+    "--infrastructure" | "--kubernetes" | "--software" | "--utilities" )
+      local MODULES=$(echo "$1" | cut -c 3-)
+      local CONIGURATION_MODULES=$(cat configuration.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      local ADDITIONAL_MODULES=$(cat $MODULES.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      terraform plan -out changes.plan $CONIGURATION_MODULES $ADDITIONAL_MODULES
+      ;;
+    "--refresh" )
+      terraform plan -out changes.plan -refresh-only
+      ;;
+    * )
+      terraform plan -out changes.plan "${@:2}"
+      ;;
+  esac
+}
+
+function kube_apply() {
+  if [ -f "$CURRENT_DIR/changes.plan" ];
+  then
+    terraform apply changes.plan "${@:2}"
+  else
+    terraform apply "${@:2}"
+  fi
+}
+
+function kube_spin() {
+  read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+  kube_plan --infrastructure && \
+  kube_apply && \
+  kube_plan --kubernetes && \
+  kube_apply && \
+  kube_plan --software && \
+  kube_apply && \
+  kube_plan && \
+  kube_apply
+}
+
+function kube_provision() {
+  read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+  kube_plan --provision && \
+  kube_apply
+}
+
+function kube_cycle() {
+  read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+  terraform state list | grep "module.configuration_kube_secrets.tls_private_key.tls_private_key_admins_ssh*" | terraform taint $(awk '{print $1}') && \
+  terraform state list | grep "module.configuration_kube_secrets.tls_private_key.tls_private_key_users_git*" | terraform taint $(awk '{print $1}') && \
+  kube_plan && \
+  kube_apply
+}
+
+function kube_destroy() {
+  read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+  case "$1" in
+    "--infrastructure" )
+      local MODULES=$(echo "$1" | cut -c 3-)
+      local CONIGURATION_MODULES=$(cat configuration.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      local ADDITIONAL_MODULES=$(cat $MODULES.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      terraform destroy -auto-approve $CONIGURATION_MODULES $ADDITIONAL_MODULES
+      ;;
+    "--kubernetes" | "--software" )
+      local MODULES=$(echo "$1" | cut -c 3-)
+      terraform state list | \
+        grep "module.${MODULES}_" | \
+        terraform state rm $(awk '{print $1}')
+      ;;
+    "--utilities" )
+      local MODULES=$(echo "$1" | cut -c 3-)
+      local ADDITIONAL_MODULES=$(cat $MODULES.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      terraform destroy -auto-approve $ADDITIONAL_MODULES
+      ;;
+    * )
+      local CONIGURATION_MODULES=$(cat configuration.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      local INFRASTRUCTURE_MODULES=$(cat infrastructure.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      local UTILITIES_MODULES=$(cat utilities.tf | hcl2json | jq '.module | keys[]' | tr -d '"' | awk '{print "-target module."$1}')
+      terraform destroy -auto-approve $UTILITIES_MODULES && \
+      terraform state list | \
+        grep "module.software_" | \
+        terraform state rm $(awk '{print $1}') && \
+      terraform state list | \
+        grep "module.kubernetes_" | \
+        terraform state rm $(awk '{print $1}') && \
+      terraform destroy -auto-approve $CONIGURATION_MODULES $INFRASTRUCTURE_MODULES
+      ;;
+  esac
+}
+
+function kube_format() {
+  find $REPO_DIR/terraform/clusters/*/*/* -maxdepth 0 -type d -exec terraform fmt -recursive {} \;
+  find $REPO_DIR/terraform/modules/* -maxdepth 0 -type d -exec terraform fmt -recursive {} \;
+}
+
+function kube_docs() {
+  find $REPO_DIR/terraform/clusters/*/*/* -maxdepth 0 -type d -exec terraform-docs markdown document -c $REPO_DIR/.terraform-docs.yaml --hide providers,resources,outputs,inputs --output-file README.md {} \;
+  find $REPO_DIR/terraform/modules/* -maxdepth 0 -type d -exec terraform-docs markdown document -c $REPO_DIR/.terraform-docs.yaml --hide modules,requirements --output-file README.md {} \;
+}
+
+function kube_push() {
+  [ -z "$1" ] && MESSAGE="Updates: $TIMESTAMP" || MESSAGE="$1"
+  kube_format
+  kube_docs
+  cd $REPO_DIR && \
+  git add . && \
+  git commit -m "$MESSAGE" && \
+  git push origin $REPO_BRANCH
+}
+
+function kube_print() {
+  local CLUSTER_PROVIDER_FILE=$(cat $CURRENT_DIR/.terraform-kube | xargs echo -n)
+  local CLUSTER_PROVIDER=$(echo ${CLUSTER_PROVIDER_FILE// /_} | tr '[:lower:]' '[:upper:]')
+  case $CLUSTER_PROVIDER in
+    "HCLOUD" )
+      echo "Printing base64 '$CLUSTER_PROVIDER' provider module files."
+      ;;
+    * )
+      echo "Cloud provider '$CLUSTER_PROVIDER' not supported."
+      exit 1
+      ;;
+  esac
+  cat <<EOF
+CONFIGURATION_${CLUSTER_PROVIDER}_FILE=$(base64 -i configuration.tf)
+INFRASTRUCTURE_${CLUSTER_PROVIDER}_FILE=$(base64 -i infrastructure.tf)
+KUBERNETES_${CLUSTER_PROVIDER}_FILE=$(base64 -i kubernetes.tf)
+SOFTWARE_${CLUSTER_PROVIDER}_FILE=$(base64 -i software.tf)
+UTILITIES_${CLUSTER_PROVIDER}_FILE=$(base64 -i utilities.tf)
+EOF
+}
+
+function kube_scaffold_hcloud_settings_tf() {
+  local CLUSTER_DIR=$1
+  local TERRAFORM_VERSION=$(tfswitch -U)
+  local NODEPING_PROVIDER_VERSION=0.0.1
+  local AWS_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/aws?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local HCLOUD_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hetznercloud/hcloud?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local KUBERNETES_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/kubernetes?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local HELM_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/helm?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local DOCKER_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/kreuzwerker/docker?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local SOPS_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/lokkersp/sops?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local PACKER_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/toowoxx/packer?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local VAULT_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/vault?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local MINIO_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/aminueza/minio?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local GITLAB_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/gitlabhq/gitlab?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local ONEPASSWORD_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/1Password/onepassword?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local GRAFANA_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/grafana/grafana?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local ELASTICSTACK_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/elastic/elasticstack?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local MATTERMOST_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/octo-technology/mattermost?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local LOCAL_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/local?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local RANDOM_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/random?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local NULL_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/null?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local EXTERNAL_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/external?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local HTTP_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/http?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  local TLS_PROVIDER_VERSION=$(curl -s https://registry.terraform.io/v2/providers/hashicorp/tls?include=provider-versions | jq '.included | sort_by(.attributes["published-at"])[-1] | .attributes.version' | tr -d '"')
+  cat <<EOF > ${CLUSTER_DIR}/settings.tf
+terraform {
+  required_version = "${TERRAFORM_VERSION}"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "${AWS_PROVIDER_VERSION}"
+    }
+    hcloud = {
+      source  = "hetznercloud/hcloud"
+      version = "${HCLOUD_PROVIDER_VERSION}"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "${KUBERNETES_PROVIDER_VERSION}"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "${HELM_PROVIDER_VERSION}"
+    }
+    docker = {
+      source = "kreuzwerker/docker"
+      version = "${DOCKER_PROVIDER_VERSION}"
+    }
+    nodeping = {
+      source  = "softkraft.co/terraform/nodeping"
+      version = "${NODEPING_PROVIDER_VERSION}"
+    }
+    sops = {
+      source  = "lokkersp/sops"
+      version = "${SOPS_PROVIDER_VERSION}"
+    }
+    packer = {
+      source  = "toowoxx/packer"
+      version = "${PACKER_PROVIDER_VERSION}"
+    }
+    vault = {
+      source  = "hashicorp/vault"
+      version = "${VAULT_PROVIDER_VERSION}"
+    }
+    minio = {
+      source  = "aminueza/minio"
+      version = "${MINIO_PROVIDER_VERSION}"
+    }
+    gitlab = {
+      source = "gitlabhq/gitlab"
+      version = "${GITLAB_PROVIDER_VERSION}"
+    }
+    onepassword = {
+      source  = "1Password/onepassword"
+      version = "${ONEPASSWORD_PROVIDER_VERSION}"
+    }
+    grafana = {
+      source  = "grafana/grafana"
+      version = "${GRAFANA_PROVIDER_VERSION}"
+    }
+    elasticstack = {
+      source  = "elastic/elasticstack"
+      version = "${ELASTICSTACK_PROVIDER_VERSION}"
+    }
+    mattermost = {
+      source = "octo-technology/mattermost"
+      version = "${MATTERMOST_PROVIDER_VERSION}"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "${LOCAL_PROVIDER_VERSION}"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "${RANDOM_PROVIDER_VERSION}"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "${NULL_PROVIDER_VERSION}"
+    }
+    external = {
+      source  = "hashicorp/external"
+      version = "${EXTERNAL_PROVIDER_VERSION}"
+    }
+    http = {
+      source  = "hashicorp/http"
+      version = "${HTTP_PROVIDER_VERSION}"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "${TLS_PROVIDER_VERSION}"
+    }
+  }
+  backend "s3" {
+    key     = "${SLUG}-kube/${ENVIRONMENT}/${VERSION}.tfstate"
+    bucket  = "${STATE_BUCKET}"
+    region  = "${AWS_REGION}"
+    profile = "${AWS_PROFILE}"
+    encrypt = true
+  }
+}
+
+provider "aws" {
+  profile = "${AWS_PROFILE}"
+  region  = "${AWS_REGION}"
+  allowed_account_ids = [
+    module.infrastructure_aws_account.id
+  ]
+  assume_role {
+    role_arn = module.infrastructure_aws_account.role_arn
+  }
+}
+
+provider "aws" {
+  alias   = "root"
+  profile = "${AWS_PROFILE}"
+  region  = "${AWS_REGION}"
+}
+
+provider "hcloud" {
+  token = local.kube_secrets.tokens.hcloud_token
+}
+
+provider "nodeping" {
+  token = local.kube_secrets.tokens.nodeping_apikey
+}
+
+provider "kubernetes" {
+  host                   = module.kubernetes_k8s_join.host
+  client_key             = module.kubernetes_k8s_join.key
+  client_certificate     = module.kubernetes_k8s_join.certificate
+  cluster_ca_certificate = module.kubernetes_k8s_join.authority
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = module.kubernetes_k8s_join.host
+    client_key             = module.kubernetes_k8s_join.key
+    client_certificate     = module.kubernetes_k8s_join.certificate
+    cluster_ca_certificate = module.kubernetes_k8s_join.authority
+  }
+}
+
+provider "docker" {
+  registry_auth {
+    address  = module.software_docker_registry.endpoint
+    username = module.software_docker_registry.username
+    password = module.software_docker_registry.password
+  }
+}
+
+provider "vault" {
+  address         = module.software_hashicorp_vault.endpoint_url
+  token           = module.software_hashicorp_vault.root_token
+  max_retries     = 10
+  skip_tls_verify = true
+}
+
+provider "minio" {
+  minio_server   = module.software_minio_console.gateway
+  minio_user     = module.software_minio_console.access_key
+  minio_password = module.software_minio_console.secret_key
+  minio_ssl      = true
+  minio_insecure = true
+}
+
+provider "gitlab" {
+  base_url         = module.software_gitlab_ci.endpoint_api_url
+  token            = module.software_gitlab_ci.token
+  early_auth_check = false
+  insecure         = true
+}
+
+provider "onepassword" {
+  url   = module.software_onepassword_connect.endpoint_url
+  token = module.configuration_kube_secrets.tokens.onepassword_token
+}
+
+provider "grafana" {
+  url                  = module.software_prometheus_stack.endpoint_url
+  auth                 = module.software_prometheus_stack.authentication
+  retries              = 10
+  insecure_skip_verify = true
+}
+
+provider "elasticstack" {
+  elasticsearch {
+    username  = module.software_elastic_stack.username
+    password  = module.software_elastic_stack.password
+    cert_data = module.software_elastic_stack.certificate
+    ca_data   = module.software_elastic_stack.authority
+    key_data  = module.software_elastic_stack.key
+    endpoints = [module.software_elastic_stack.gateway_url]
+    insecure  = true
+  }
+}
+EOF
+}
+
+function kube_scaffold_hcloud_configuration_yaml() {
+  local CLUSTER_DIR=$1
+  cat <<EOF > ${CLUSTER_DIR}/settings/configuration.yaml
+cluster:
+  owner: ${OWNER}
+  version: ${VERSION}
+  user: ${USER}
+  email: ${EMAIL}
+  environment: ${ENVIRONMENT}
+  endpoint: ${ENDPOINT}
+settings:
+  aws:
+    region: ${AWS_REGION}
+    zone_id: ${AWS_ZONE_ID}
+    account: true
+    sso: true
+    sso_group: ${AWS_SSO_GROUP}
+  hcloud:
+    location: ${HCLOUD_LOCATION}
+    zone: ${HCLOUD_ZONE}
+  slack:
+    channel: ${SLACK_CHANNEL}
+  onepassword:
+    vault: ${ONEPASSWORD_VAULT}
+security:
+  passwords:
+    hash: $(echo $RANDOM | md5sum | head -c 20; echo)
+secrets:
+  slack:
+    - name: token
+      key: token
+  nodeping:
+    - name: apikey
+      key: apikey
+  hcloud:
+    - name: token
+      key: ${SLUG}-kube-${ENVIRONMENT}-${VERSION}
+  onepassword:
+    - name: token
+      key: token
+    - name: credentials
+      key: credentials
+EOF
+}
+
+function kube_scaffold_hcloud_infrastructure_yaml() {
+  local CLUSTER_DIR=$1
+  cat <<EOF > ${CLUSTER_DIR}/settings/infrastructure.yaml
+domains:
+  - name: ${DOMAIN}
+    source: ${AWS_ZONE_ID}
+    balancer: lb2
+environment:
+  images:
+    im1:
+      type: cpx21
+      yq: 4.24.4
+      ubuntu: 22.04
+      kubernetes: 1.25.6
+  balancers:
+    lb1:
+      type: lb11
+      https: 6443
+      proxy: false
+      selector: main
+    lb2:
+      type: lb11
+      ssh: 32022
+      http: 32001
+      https: 32002
+      selector: worker
+  firewalls:
+    fw1:
+      direction: out
+      port: any
+      all: true
+      tcp: true
+      udp: true
+    fw2:
+      direction: in
+      port: any
+      all: true
+      icmp: true
+    fw3:
+      direction: in
+      port: 22
+      all: true
+      tcp: true
+    fw4:
+      direction: in
+      port: any
+      tcp: true
+      udp: true
+  nodes:
+    main:
+      ng1:
+        image: im1
+        type: cpx31
+        count: 3
+    worker:
+      ng1:
+        image: im1
+        type: cpx51
+        count: 4
+EOF
+}
+
+function kube_scaffold_hcloud_kubernetes_yaml() {
+  local CLUSTER_DIR=$1
+
+  local HCLOUD_CCM_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/mlohr/hcloud-cloud-controller-manager | jq '.available_versions[0].version' | tr -d '"')
+  local HCLOUD_CSI_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/mlohr/hcloud-csi-driver | jq '.available_versions[0].version' | tr -d '"')
+  local NGINX_INGRESS_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/ingress-nginx/ingress-nginx | jq '.available_versions[0].version' | tr -d '"')
+  local JETSTACK_CERT_MANAGER_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/cert-manager/cert-manager | jq '.available_versions[0].version' | tr -d '"')
+  local VMWARE_VELERO_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/vmware-tanzu/velero | jq '.available_versions[0].version' | tr -d '"')
+  local ROOK_CEPH_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/rook/rook-ceph | jq '.available_versions[0].version' | tr -d '"')
+  
+  cat <<EOF > ${CLUSTER_DIR}/settings/kubernetes.yaml
+system:
+  hcloud-ccm:
+    backup: true
+    version: ${HCLOUD_CCM_CHART_VERSION}
+  hcloud-csi:
+    backup: true
+    version: ${HCLOUD_CSI_CHART_VERSION}
+  nginx-ingress:
+    backup: true
+    version: ${NGINX_INGRESS_CHART_VERSION}
+    replicas: ${NGINX_INGRESS_REPLICAS}
+  jetstack-cert-manager:
+    backup: true
+    version: ${JETSTACK_CERT_MANAGER_CHART_VERSION}
+    class: ${JETSTACK_CERT_MANAGER_CLASS}
+  vmware-velero:
+    version: ${VMWARE_VELERO_CHART_VERSION}
+    class: ${VMWARE_VELERO_CLASS}
+  rook-ceph:
+    version: ${ROOK_CEPH_CHART_VERSION}
+    replicas: ${ROOK_CEPH_REPLICAS}
+    osd: ${ROOK_CEPH_OSD}
+    class: ${ROOK_CEPH_CLASS}
+    endpoint: ${ROOK_CEPH_ENDPOINT}
+quotas:
+  minimal:
+    cpu: 10
+    memory: 64
+    storage: 1
+  namespace:
+    limits: 10
+    seats: 6
+  tiers:
+    micro:
+      cpu: 125
+      memory: 256
+      storage: 10
+    small:
+      cpu: 250
+      memory: 512
+      storage: 20
+    medium:
+      cpu: 500
+      memory: 1024
+      storage: 40
+    large:
+      cpu: 1000
+      memory: 2048
+      storage: 80
+    xlarge:
+      cpu: 2000
+      memory: 4096
+      storage: 160
+EOF
+}
+
+function kube_scaffold_hcloud_software_yaml() {
+  local CLUSTER_DIR=$1
+
+  local K8S_DASHBOARD_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/k8s-dashboard/kubernetes-dashboard | jq '.available_versions[0].version' | tr -d '"')
+  local HASHICORP_VAULT_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/hashicorp/vault | jq '.available_versions[0].version' | tr -d '"')
+  local MINIO_CONSOLE_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/minio-official/minio | jq '.available_versions[0].version' | tr -d '"')
+  local ONEPASSWORD_CONNECT_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/onepassword-connect/connect | jq '.available_versions[0].version' | tr -d '"')
+  local DOCKER_REGISTRY_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/twuni/docker-registry | jq '.available_versions[0].version' | tr -d '"')
+  local HELM_CHARTMUSEUM_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/chartmuseum/chartmuseum | jq '.available_versions[0].version' | tr -d '"')
+  local GITLAB_CI_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/gitlab/gitlab | jq '.available_versions[0].version' | tr -d '"')
+  local PROMETHEUS_STACK_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/prometheus-community/kube-prometheus-stack | jq '.available_versions[0].version' | tr -d '"')
+  local ELASTIC_STACK_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/elastic/elasticsearch | jq '.available_versions[0].version' | tr -d '"')
+  local ELASTIC_STACK_OPERATOR_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/elastic/eck-operator | jq '.available_versions[0].version' | tr -d '"')
+  local BITNAMI_PHPMYADMIN_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/bitnami/phpmyadmin | jq '.available_versions[0].version' | tr -d '"')
+  local RUNIX_PGADMIN_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/runix/pgadmin4 | jq '.available_versions[0].version' | tr -d '"')
+
+  local MYSQL_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/bitnami/mysql | jq '.available_versions[0].version' | tr -d '"')
+  local POSTGRESQL_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/bitnami/postgresql | jq '.available_versions[0].version' | tr -d '"')
+  local REDIS_CHART_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/bitnami/redis | jq '.available_versions[0].version' | tr -d '"')
+  
+  local MYSQL_IMAGE_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/bitnami/mysql | jq '.containers_images[0].image' | tr -d '"' | tr ":" " " | awk '{print $2}')
+  local POSTGRESQL_IMAGE_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/bitnami/postgresql | jq '.containers_images[0].image' | tr -d '"' | tr ":" " " | awk '{print $2}')
+  local REDIS_IMAGE_VERSION=$(curl -s https://artifacthub.io/api/v1/packages/helm/bitnami/redis | jq '.containers_images[0].image' | tr -d '"' | tr ":" " " | awk '{print $2}')
+  
+  cat <<EOF > ${CLUSTER_DIR}/settings/software.yaml
+applications:
+  k8s-dashboard:
+    backup: true
+    version: ${K8S_DASHBOARD_CHART_VERSION}
+    endpoint: ${K8S_DASHBOARD_ENDPOINT}
+    class: ${K8S_DASHBOARD_CLASS}
+  hashicorp-vault:
+    backup: true
+    version: ${HASHICORP_VAULT_CHART_VERSION}
+    endpoint: ${HASHICORP_VAULT_ENDPOINT}
+    class: ${HASHICORP_VAULT_CLASS}
+    replicas: ${HASHICORP_VAULT_REPLICAS}
+  minio-console:
+    backup: true
+    version: ${MINIO_CONSOLE_CHART_VERSION}
+    endpoint: ${MINIO_CONSOLE_ENDPOINT}
+    gateway: ${MINIO_CONSOLE_GATEWAY}
+    class: ${MINIO_CONSOLE_CLASS}
+    replicas: ${MINIO_CONSOLE_REPLICAS}
+  docker-registry:
+    backup: true
+    version: ${DOCKER_REGISTRY_CHART_VERSION}
+    endpoint: ${DOCKER_REGISTRY_ENDPOINT}
+    class: ${DOCKER_REGISTRY_CLASS}
+    replicas: ${DOCKER_REGISTRY_REPLICAS}
+  helm-chartmuseum:
+    backup: true
+    version: ${HELM_CHARTMUSEUM_CHART_VERSION}
+    endpoint: ${HELM_CHARTMUSEUM_ENDPOINT}
+    class: ${HELM_CHARTMUSEUM_CLASS}
+    replicas: ${HELM_CHARTMUSEUM_REPLICAS}
+  gitlab-ci:
+    backup: true
+    version: ${GITLAB_CI_CHART_VERSION}
+    postgres: ${POSTGRESQL_CHART_VERSION}
+    redis: ${REDIS_CHART_VERSION}
+    endpoint: ${GITLAB_CI_ENDPOINT}
+    gateway: ${GITLAB_CI_GATEWAY}
+    class: ${GITLAB_CI_CLASS}
+    replicas: ${GITLAB_CI_REPLICAS}
+  onepassword-connect:
+    backup: true
+    version: ${ONEPASSWORD_CONNECT_CHART_VERSION}
+    endpoint: ${ONEPASSWORD_CONNECT_ENDPOINT}
+    class: ${ONEPASSWORD_CONNECT_CLASS}
+    replicas: ${ONEPASSWORD_CONNECT_REPLICAS}
+  prometheus-stack:
+    version: ${PROMETHEUS_STACK_CHART_VERSION}
+    endpoint: ${PROMETHEUS_STACK_ENDPOINT}
+    class: ${PROMETHEUS_STACK_CLASS}
+    replicas: ${PROMETHEUS_STACK_REPLICAS}
+    retention: 60d
+    timezone: Europe/Luxembourg
+  elastic-stack:
+    version: ${ELASTIC_STACK_CHART_VERSION}
+    operator: ${ELASTIC_STACK_OPERATOR_CHART_VERSION}
+    endpoint: ${ELASTIC_STACK_ENDPOINT}
+    gateway: ${ELASTIC_STACK_GATEWAY}
+    class: ${ELASTIC_STACK_CLASS}
+    replicas: ${ELASTIC_STACK_REPLICAS}
+    opts: -Xmx1g -Xms1g
+  bitnami-phpmyadmin:
+    backup: true
+    version: ${BITNAMI_PHPMYADMIN_CHART_VERSION}
+    endpoint: ${BITNAMI_PHPMYADMIN_ENDPOINT}
+    class: ${BITNAMI_PHPMYADMIN_CLASS}
+  runix-pgadmin:
+    backup: true
+    version: ${RUNIX_PGADMIN_CHART_VERSION}
+    endpoint: ${RUNIX_PGADMIN_ENDPOINT}
+    class: ${RUNIX_PGADMIN_CLASS}
+    discovery: "*/10 * * * *"
+versions:
+  charts:
+    kube/deployment:
+      registry: local
+      repository: local
+      chart: local
+      default: local
+      latest: local
+    bitnami/mysql:
+      registry: charts.bitnami.com
+      repository: bitnami
+      chart: mysql
+      default: ${MYSQL_CHART_VERSION}
+      latest: ${MYSQL_CHART_VERSION}
+    bitnami/postgresql:
+      registry: charts.bitnami.com
+      repository: bitnami
+      chart: postgresql
+      default: ${POSTGRESQL_CHART_VERSION}
+      latest: ${POSTGRESQL_CHART_VERSION}
+    bitnami/redis:
+      registry: charts.bitnami.com
+      repository: bitnami
+      chart: redis
+      default: ${REDIS_CHART_VERSION}
+      latest: ${REDIS_CHART_VERSION}
+  images:
+    kube/deployment:
+      registry: local
+      repository: local
+      image: local
+      default: local
+      latest: local
+    bitnami/mysql:
+      registry: docker.io
+      repository: bitnami
+      image: mysql
+      default: ${MYSQL_IMAGE_VERSION}
+      latest: ${MYSQL_IMAGE_VERSION}
+      8: ${MYSQL_IMAGE_VERSION}
+      5: 5.7.37-debian-10-r85
+    bitnami/postgresql:
+      registry: docker.io
+      repository: bitnami
+      image: postgresql
+      default: ${POSTGRESQL_IMAGE_VERSION}
+      latest: ${POSTGRESQL_IMAGE_VERSION}
+      15: ${POSTGRESQL_IMAGE_VERSION}
+      14: 14.2.0-debian-10-r58
+      13: 13.6.0-debian-10-r63
+      12: 12.10.0-debian-10-r64
+      11: 11.15.0-debian-10-r64
+    bitnami/redis:
+      registry: docker.io
+      repository: bitnami
+      image: redis
+      default: ${REDIS_IMAGE_VERSION}
+      latest: ${REDIS_IMAGE_VERSION}
+      7: ${REDIS_IMAGE_VERSION}
+      6: 6.2.6-debian-10-r179
+EOF
+}
+
+function kube_scaffold_hcloud_utilities_yaml() {
+  local CLUSTER_DIR=$1
+  cat <<EOF > ${CLUSTER_DIR}/settings/utilities.yaml
+operator:
+  endpoint: ${KUBE_OPERATOR_ENDPOINT}
+  class: ${KUBE_OPERATOR_CLASS}
+  certificates: "0 * * * *"
+  ingresses: "*/10 * * * *"
+  backups: "0 1,9,17 * * *"
+  nodes: "* * * * *"
+  disks: "* * * * *"
+users:
+  example-admin:
+    name: Example Admin
+    email: admin@${DOMAIN}
+    phone: +1234567890
+    role: admin
+  example-developer:
+    name: Example Developer
+    email: developer@${DOMAIN}
+    role: developer
+  example-viewer:
+    name: Example Viewer
+    email: viewer@${DOMAIN}
+    role: viewer
+organizations:
+  ${SLUG}:
+    fullname: ${OWNER}
+    email: ${EMAIL}
+    dashboard: kube-costs
+projects:
+  - name: example
+    quota: micro
+    fullname: ${OWNER} Example
+    organization: ${SLUG}
+    managed: true
+    domains:
+      - name: ${DOMAIN}
+        records:
+          - example
+    emails:
+      - mail@${DOMAIN}
+    developers:
+      - example-developer
+    viewers:
+      - example-viewer
+    environments:
+      - development
+      - staging
+      - production
+EOF
+}
+
+function kube_scaffold_hcloud_cluster_modules() {
+  local CLUSTER_DIR=$1
+  echo $CONFIGURATION_HCLOUD_FILE | base64 --decode > $CLUSTER_DIR/configuration.tf
+  echo $INFRASTRUCTURE_HCLOUD_FILE | base64 --decode > $CLUSTER_DIR/infrastructure.tf
+  echo $KUBERNETES_HCLOUD_FILE | base64 --decode > $CLUSTER_DIR/kubernetes.tf
+  echo $SOFTWARE_HCLOUD_FILE | base64 --decode > $CLUSTER_DIR/software.tf
+  echo $UTILITIES_HCLOUD_FILE | base64 --decode > $CLUSTER_DIR/utilities.tf
+}
+
+function kube_scaffold_cluster_dot_files() {
+  local CLUSTER_DIR=$1
+  local TERRAFORM_VERSION=v$(tfswitch -U)
+  touch $CLUSTER_DIR/.terraform-kube
+  echo "$PROVIDER" > $CLUSTER_DIR/.terraform-kube
+  touch $CLUSTER_DIR/.terraform-version
+  echo "$TERRAFORM_VERSION" > $CLUSTER_DIR/.terraform-version
+}
+
+function kube_scaffold_hcloud_cluster() {
+  local CLUSTER_DIR=$1
+  kube_scaffold_hcloud_cluster_modules $CLUSTER_DIR
+  kube_scaffold_hcloud_settings_tf $CLUSTER_DIR
+  kube_scaffold_hcloud_configuration_yaml $CLUSTER_DIR
+  kube_scaffold_hcloud_infrastructure_yaml $CLUSTER_DIR
+  kube_scaffold_hcloud_kubernetes_yaml $CLUSTER_DIR
+  kube_scaffold_hcloud_software_yaml $CLUSTER_DIR
+  kube_scaffold_hcloud_utilities_yaml $CLUSTER_DIR
+  kube_scaffold_cluster_dot_files $CLUSTER_DIR
+  cd $CLUSTER_DIR
+  kube_format
+  kube_docs
+  local CURRENT_VERSION=$(cat $CLUSTER_DIR/.terraform-version)
+  local TERRAFORM_VERSION=${CURRENT_VERSION#"v"}
+  tfswitch $TERRAFORM_VERSION
+  kube_init && kube_validate
+}
+
+function kube_scaffold() {
+  while [[ $# > 1 ]]
+  do
+    local KEY="$1"
+    case $KEY in
+      --owner)
+      OWNER="$2"
+      shift
+      ;;
+      --provider)
+      PROVIDER=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --environment)
+      ENVIRONMENT=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --version)
+      VERSION=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --user)
+      USER=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --email)
+      EMAIL=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --domain)
+      DOMAIN=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --endpoint)
+      ENDPOINT=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --aws-region)
+      AWS_REGION=$2
+      shift
+      ;;
+      --aws-profile)
+      AWS_PROFILE=$2
+      shift
+      ;;
+      --aws-zone-id)
+      AWS_ZONE_ID=$2
+      shift
+      ;;
+      --aws-sso-group)
+      AWS_SSO_GROUP=$2
+      shift
+      ;;
+      --state-bucket)
+      STATE_BUCKET=$2
+      shift
+      ;;
+      --hcloud-zone)
+      HCLOUD_ZONE=$2
+      shift
+      ;;
+      --hcloud-location)
+      HCLOUD_LOCATION=$2
+      shift
+      ;;
+      --slack-channel)
+      SLACK_CHANNEL=$2
+      shift
+      ;;
+      --1pass-vault)
+      ONEPASSWORD_VAULT=$2
+      shift
+      ;;
+      *)
+      ;;
+    esac
+    shift
+  done
+  SLUG=$(echo ${OWNER// /_} | tr '[:upper:]' '[:lower:]')
+  [ -z "$OWNER" ] && { echo "Parameter --owner is required"; exit 1; }
+  [ -z "$EMAIL" ] && { echo "Parameter --email is required"; exit 1; }
+  [ -z "$DOMAIN" ] && { echo "Parameter --domain is required"; exit 1; }
+  [ -z "$ENDPOINT" ] && { echo "Parameter --endpoint is required"; exit 1; }
+  [ -z "$AWS_PROFILE" ] && { echo "Parameter --aws-profile is required"; exit 1; }
+  [ -z "$AWS_ZONE_ID" ] && { echo "Parameter --aws-zone-id is required"; exit 1; }
+  [ -z "$AWS_SSO_GROUP" ] && { echo "Parameter --aws-sso-group is required"; exit 1; }
+  [ -z "$STATE_BUCKET" ] && { echo "Parameter --state-bucket is required"; exit 1; }
+  [ -z "$SLACK_CHANNEL" ] && { echo "Parameter --slack-channel is required"; exit 1; }
+  [ -z "$ONEPASSWORD_VAULT" ] && { echo "Parameter --1pass-vault is required"; exit 1; }
+  [ -z "$PROVIDER" ] && PROVIDER=$DEFAULT_PROVIDER
+  [ -z "$ENVIRONMENT" ] && ENVIRONMENT=$DEFAULT_ENVIRONMENT
+  [ -z "$VERSION" ] && VERSION=$DEFAULT_VERSION
+  [ -z "$USER" ] && USER=$DEFAULT_USER
+  [ -z "$AWS_REGION" ] && AWS_REGION=$DEFAULT_AWS_REGION
+  [ -z "$HCLOUD_ZONE" ] && HCLOUD_ZONE=$DEFAULT_HCLOUD_ZONE
+  [ -z "$HCLOUD_LOCATION" ] && HCLOUD_LOCATION=$DEFAULT_HCLOUD_LOCATION
+  local NEW_CLUSTER_DIR=$REPO_DIR/terraform/clusters/$SLUG/$ENVIRONMENT/$VERSION
+  if [ -d $NEW_CLUSTER_DIR ]
+  then
+    echo "Cluster directory already exists."
+    exit 1
+  fi
+  mkdir -p $NEW_CLUSTER_DIR/settings
+  case $PROVIDER in
+    "hcloud" )
+      kube_scaffold_hcloud_cluster $NEW_CLUSTER_DIR
+      exit
+      ;;
+    * )
+      echo "Cloud provider '$PROVIDER' not supported."
+      exit 1
+      ;;
+  esac
+}
+
+function kube_update_hcloud_cluster() {
+  read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+  local CLUSTER_DIR=$1
+  SLUG=$(cat settings.tf | hcl2json | jq '.terraform[0].backend.s3[0].key' | tr -d '"' | dirname $(awk '{print $1}') | dirname $(awk '{print $1}'))
+  ENVIRONMENT=$(cat settings.tf | hcl2json | jq '.terraform[0].backend.s3[0].key' | tr -d '"' | dirname $(awk '{print $1}') | basename $(awk '{print $1}'))
+  VERSION=$(cat settings.tf | hcl2json | jq '.terraform[0].backend.s3[0].key' | tr -d '"' | basename $(awk '{print $1}') | cut -d. -f1)
+  STATE_BUCKET=$(cat settings.tf | hcl2json | jq '.terraform[0].backend.s3[0].bucket' | tr -d '"')
+  AWS_REGION=$(cat settings.tf | hcl2json | jq '.terraform[0].backend.s3[0].region' | tr -d '"')
+  AWS_PROFILE=$(cat settings.tf | hcl2json | jq '.terraform[0].backend.s3[0].profile' | tr -d '"')
+  kube_scaffold_hcloud_cluster_modules $CLUSTER_DIR
+  kube_scaffold_hcloud_settings_tf $CLUSTER_DIR
+  kube_scaffold_hcloud_kubernetes_yaml $CLUSTER_DIR
+  kube_scaffold_hcloud_software_yaml $CLUSTER_DIR
+  kube_scaffold_cluster_dot_files $CLUSTER_DIR
+  cd $CLUSTER_DIR
+  kube_format
+  kube_docs
+  local CURRENT_VERSION=$(cat $CURRENT_DIR/.terraform-version)
+  local TERRAFORM_VERSION=${CURRENT_VERSION#"v"}
+  tfswitch $TERRAFORM_VERSION
+  kube_init && kube_validate
+}
+
+function kube_update() {
+  PROVIDER=$(cat $CURRENT_DIR/.terraform-kube | xargs echo -n)
+  case $PROVIDER in
+    "hcloud" )
+      kube_update_hcloud_cluster $CURRENT_DIR
+      exit
+      ;;
+    * )
+      echo "Cloud provider '$PROVIDER' not supported."
+      exit 1
+      ;;
+  esac
+}
+
+function kube_help() {
+  if [ ! "$1" == "help" ]
+  then
+    echo "Invalid command."
+  fi
+  cat <<EOF
+Usage:
+  kube
+    install                                                            - Install 'kube' and dependencies if not already installed
+      Optional parameters:
+        --force                                                        - Install dependencies if not already installed and overwrite 'kube' with latest version
+    dev [PARAMETERS]                                                   - Kube dev command (kube dev help)
+    ops [PARAMETERS]                                                   - Kube ops command (kube ops help)
+    help                                                               - Print this help
+EOF
+}
+
+function kube_dev_help() {
+  if [ ! "$1" == "help" ]
+  then
+    echo "Invalid command."
+  fi
+  cat <<EOF
+Usage:
+  kube dev
+EOF
+}
+
+function kube_ops_help() {
+  if [ ! "$1" == "help" ]
+  then
+    echo "Invalid command."
+  fi
+  cat <<EOF
+Usage:
+  kube ops
+    scaffold                                                           - Scaffold and init a new Kube cluster
+      Required parameters:
+        --owner [OWNER]
+        --email [EMAIL]
+        --domain [DOMAIN]
+        --endpoint [ENDPOINT]
+        --aws-profile [AWS_PROFILE]
+        --aws-zone-id [AWS_ZONE_ID]
+        --state-bucket [STATE_BUCKET]
+        --secrets-bucket [SECRETS_BUCKET]
+        --slack-channel [SLACK_CHANNEL]
+        --1pass-vault [ONEPASSWORD_VAULT]
+      Optional parameters:
+        --provider [PROVIDER]                 (default: hcloud)  
+        --environment [ENVIRONMENT]           (default: development)  
+        --version [VERSION]                   (default: v1)
+        --user [USER]                         (default: devops)
+        --aws-region [AWS_REGION]             (default: us-east-1)
+        --hcloud-zone [HCLOUD_ZONE]           (default: us-east)
+        --hcloud-location [HCLOUD_LOCATION]   (default: ash)
+    update                                                             - Update Terraform, providers, Helm and Docker images versions
+    format                                                             - Format all terraform definitions within the repository 
+    docs                                                               - Document all terraform modules within the repository
+    push                                                               - Format, document and push the latest changes to the repository
+    init                                                               - Inititalize Kube cluster 
+      Optional parameters:
+        [TERRAFORM_OPTIONS]
+    upgrade                                                            - Update terraform lock file
+      Optional parameters:
+        [TERRAFORM_OPTIONS]
+    validate                                                           - Validate Kube cluster 
+      Optional parameters:
+        [TERRAFORM_OPTIONS]
+    output                                                             - Print Kube cluster outputs
+      Optional parameters:
+        [TERRAFORM_OPTIONS]
+    plan                                                               - Create Kube cluster terraform plan
+      Optional parameters:
+        --infrastructure                                               - Create Kube cluster terraform plan, only for infrastructure modules
+        --kubernetes                                                   - Create Kube cluster terraform plan, only for kubernetes modules
+        --software                                                     - Create Kube cluster terraform plan, only for software modules
+        --utilitites                                                   - Create Kube cluster terraform plan, only for utilities modules
+        --refresh                                                      - Refresh Kube cluster terraform plan
+        [TERRAFORM_OPTIONS]
+    apply                                                              - Apply Kube cluster terraform plan if present, otherwise apply changes
+      Optional parameters:
+        [TERRAFORM_OPTIONS]
+    destroy                                                            - Destroy Kube cluster
+      Optional parameters:
+        --infrastructure                                               - Destroy Kube cluster infrastructure modules
+        --kubernetes                                                   - Destroy Kube cluster kubernetes modules
+        --software                                                     - Destroy Kube cluster software modules
+        --utilitites                                                   - Destroy Kube cluster utilities modules
+        [TERRAFORM_OPTIONS]
+    spin                                                               - Spin up Kube cluster progressively
+    provision                                                          - Apply only provision modules
+    cycle                                                              - Cycle all ssh keys
+    print                                                              - Print bas64 cluster modules files
+    help                                                               - Print this help
+EOF
+}
+
+function kube_ops() {
+  case $1 in
+    "setup")
+      kube_ops_setup "${@:2}"
+      exit
+      ;;
+    "scaffold" )
+      kube_check_dependencies
+      kube_check_if_repo_dir
+      echo "Executing: ${@}"
+      kube_scaffold "${@:2}"
+      exit
+      ;;
+    "update" )
+      kube_check_dependencies
+      kube_check_if_repo_dir
+      echo "Executing: ${@}"
+      kube_update
+      exit
+      ;;
+    "format" )
+      kube_check_dependencies
+      kube_check_if_repo_dir
+      echo "Executing: ${@}"
+      kube_format
+      exit
+      ;;
+    "docs" )
+      kube_check_dependencies
+      kube_check_if_repo_dir
+      echo "Executing: ${@}"
+      kube_docs
+      exit
+      ;;
+    "push" )
+      kube_check_dependencies
+      kube_check_if_repo_dir
+      echo "Executing: ${@}"
+      kube_push "${@:2}"
+      exit
+      ;;
+    "init" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_init "${@:2}"
+      exit
+      ;;
+    "upgrade" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_upgrade "${@:2}"
+      exit
+      ;;
+    "validate" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_validate "${@:2}"
+      exit
+      ;;
+    "output" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_output "${@:2}"
+      exit
+      ;;
+    "plan" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_plan "${@:2}"
+      exit
+      ;;
+    "apply" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_apply "${@:2}"
+      exit
+      ;;
+    "spin" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_spin
+      exit
+      ;;
+    "provision" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_provision
+      exit
+      ;;
+    "cycle" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_cycle
+      exit
+      ;;
+    "destroy" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_destroy "${@:2}"
+      exit
+      ;;
+    "print" )
+      kube_check_dependencies
+      kube_check_if_cluster_dir
+      echo "Executing: ${@}"
+      kube_print
+      exit
+      ;;
+    "help" | * )
+      kube_ops_help $1
+      exit
+      ;;
+  esac
+}
+
+function kube_dev_setup() {
+  while [[ $# > 1 ]]
+  do
+    local KEY="$1"
+    case $KEY in
+      --alias)
+      CLUSTER_ALIAS=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      shift
+      ;;
+      --vault-url)
+      CLUSTER_VAULT_URL="$2"
+      shift
+      ;;
+      --vault-username)
+      CLUSTER_VAULT_USERNAME="$2"
+      shift
+      ;;
+      --vault-password)
+      CLUSTER_VAULT_PASSWORD="$2"
+      shift
+      ;;
+      *)
+      ;;
+    esac
+    shift
+  done
+  [ -z "$CLUSTER_ALIAS" ] && { echo "Parameter --alias is required"; exit 1; }
+  [ -z "$CLUSTER_VAULT_URL" ] && { echo "Parameter --vault-url is required"; exit 1; }
+  [ -z "$CLUSTER_VAULT_USERNAME" ] && { echo "Parameter --vault-username is required"; exit 1; }
+  [ -z "$CLUSTER_VAULT_PASSWORD" ] && { echo "Parameter --vault-password is required"; exit 1; }
+  if [[ $(echo "${JSON_CACHE}" | jq --arg alias "${CLUSTER_ALIAS}" '.[$alias]') == null ]]
+  then
+    CLUSTER_CONFIG=$(jq --null-input --arg vault_url "${CLUSTER_VAULT_URL}" --arg vault_username "${CLUSTER_VAULT_USERNAME}" --arg vault_password "${CLUSTER_VAULT_PASSWORD}" '{"vault_url":$vault_url,"vault_username":$vault_username,"vault_password":$vault_password}')
+    JSON_CACHE=$(echo "${JSON_CACHE}" | jq --arg alias "${CLUSTER_ALIAS}" --argjson cluster "${CLUSTER_CONFIG}" '.[$alias] = $cluster')
+    JSON_CACHE=$(echo "${JSON_CACHE}" | jq --arg alias "${CLUSTER_ALIAS}" '.default = $alias')
+    echo "${JSON_CACHE}" | base64 > "${CACHE_DIR}/cache"
+  else
+    echo "Cluster alias already exists."
+  fi
+  kube_dev_get_or_create_vault_token
+  kube_dev_setup_git_ssh_key $CLUSTER_ALIAS
+  kube_dev_setup_kubectl_config $CLUSTER_ALIAS
+}
+
+function kube_dev_setup_git_ssh_key() {
+  local VAULT_URL=$(kube_dev_get_default_cluster | jq '.vault_url' | tr -d '"')
+  local VAULT_USERNAME=$(kube_dev_get_default_cluster | jq '.vault_username' | tr -d '"')
+  local VAULT_TOKEN=$(cat ${CACHE_DIR}/token | base64 -d)
+  local GIT_SSH_KEY=$(curl -s \
+    --header "X-Vault-Token: ${VAULT_TOKEN}" \
+    "${VAULT_URL}v1/user-${VAULT_USERNAME}/data/git" | jq '.data.data.private_base64' | tr -d '"')
+  echo ${GIT_SSH_KEY} | base64 -d > $HOME/.ssh/git-$1
+  chmod 600 $HOME/.ssh/git-$1
+  ssh-add $HOME/.ssh/git-$1
+}
+
+function kube_ops_setup_ssh_key() {
+  local VAULT_URL=$(kube_dev_get_default_cluster | jq '.vault_url' | tr -d '"')
+  local VAULT_USERNAME=$(kube_dev_get_default_cluster | jq '.vault_username' | tr -d '"')
+  local VAULT_TOKEN=$(cat ${CACHE_DIR}/token | base64 -d)
+  local SSH_KEY=$(curl -s \
+    --header "X-Vault-Token: ${VAULT_TOKEN}" \
+    "${VAULT_URL}v1/user-${VAULT_USERNAME}/data/ssh" | jq '.data.data.private_base64' | tr -d '"')
+  echo ${SSH_KEY} | base64 -d > $HOME/.ssh/ssh-$1
+  chmod 600 $HOME/.ssh/ssh-$1
+  ssh-add $HOME/.ssh/ssh-$1
+}
+
+function kube_dev_setup_kubectl_config() {
+  local VAULT_URL=$(kube_dev_get_default_cluster | jq '.vault_url' | tr -d '"')
+  local VAULT_USERNAME=$(kube_dev_get_default_cluster | jq '.vault_username' | tr -d '"')
+  local VAULT_TOKEN=$(cat ${CACHE_DIR}/token | base64 -d)
+  local KUBECTL_CONFIG=$(curl -s \
+    --header "X-Vault-Token: ${VAULT_TOKEN}" \
+    "${VAULT_URL}v1/user-${VAULT_USERNAME}/data/kubeconfig" | jq '.data.data.base64' | tr -d '"')
+  echo ${KUBECTL_CONFIG} | base64 -d > $HOME/.kube/config-$1
+  if [[ -f "$HOME/.kube/config" ]]
+  then
+    KUBECONFIG=$HOME/.kube/config:$HOME/.kube/config-$1 kubectl config view --flatten > $HOME/.kube/config
+  else
+    cp $HOME/.kube/config-$1 $HOME/.kube/config
+  fi
+}
+
+function kube_dev_clear() {
+  echo "Nothing yet"
+}
+
+function kube_dev_init() {
+  if [[ ! -d $CURRENT_DIR/.git ]]
+  then
+    echo "Not inside a repository directory."
+    exit 1
+  fi
+  if [[ ! -z $(git remote -v | awk '{print $1}' | grep kube) ]]
+  then
+    echo "Repository already initialized."
+    exit 1
+  fi
+  while [[ $# > 1 ]]
+  do
+    local KEY="$1"
+    case $KEY in
+      #--alias)
+      #CLUSTER_ALIAS=$(echo ${2// /_} | tr '[:upper:]' '[:lower:]')
+      #shift
+      #;;
+      --organization)
+      ORGANIZATION="$2"
+      shift
+      ;;
+      --project)
+      PROJECT="$2"
+      shift
+      ;;
+      --environment)
+      ENVIRONMENT="$2"
+      shift
+      ;;
+      *)
+      ;;
+    esac
+    shift
+  done
+  [ -z "$ORGANIZATION" ] && { echo "Parameter --organization is required"; exit 1; }
+  [ -z "$PROJECT" ] && { echo "Parameter --project is required"; exit 1; }
+  [ -z "$ENVIRONMENT" ] && ENVIRONMENT=production
+  #[ -z "$CLUSTER_ALIAS" ] && CLUSTER=$(kube_dev_get_default_cluster) || CLUSTER=$(kube_dev_get_cluster $CLUSTER_ALIAS)
+  kube_dev_get_or_create_vault_token
+  local VAULT_TOKEN=$(cat ${CACHE_DIR}/token | base64 -d)
+  local VAULT_URL=$(kube_dev_get_default_cluster | jq '.vault_url' | tr -d '"')
+  local VAULT_REPO=$(curl -s \
+    --header "X-Vault-Token: ${VAULT_TOKEN}" \
+    "${VAULT_URL}v1/project-${PROJECT}/data/information" | jq '.data.data.repository_ssh' | tr -d '"')
+  git reset --hard HEAD
+  git fetch --all
+  git checkout $ENVIRONMENT
+  git remote add kube $VAULT_REPO
+  ssh-add $HOME/.ssh/git-$(echo "${JSON_CACHE}" | jq '.default' | tr -d '"')
+  git pull kube $ENVIRONMENT --allow-unrelated-histories --no-rebase
+}
+
+function kube_dev() {
+  case $1 in
+    "setup")
+      kube_dev_setup "${@:2}"
+      exit
+      ;;
+    "clear")
+      kube_dev_clear "${@:2}"
+      exit
+      ;;
+    "init")
+      kube_dev_init "${@:2}"
+      exit
+      ;;
+    "help" | * )
+      kube_dev_help $1
+      exit
+      ;;
+  esac
+}
+
+kube_startup
+
+case $1 in
+  "install" )
+    kube_check_dependencies
+    kube_install "${@:2}"
+    exit
+    ;;
+  "dev" )
+    kube_dev "${@:2}"
+    exit
+    ;;
+  "ops" )
+    kube_ops "${@:2}"
+    exit
+    ;;
+  "help" | * )
+    kube_help $1
+    exit
+    ;;
+esac

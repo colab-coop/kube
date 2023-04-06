@@ -254,8 +254,8 @@ function kube_install_with_apt() {
     if ! command -v $i &> /dev/null
     then
       echo "Installing '$i' with apt..."
-      apt-get update &> /dev/null || exit 1
-      apt-get -y install $i &> /dev/null || exit 1
+      sudo apt-get update &> /dev/null || exit 1
+      sudo apt-get -y install $i &> /dev/null || exit 1
     else
       echo "'$i' already installed."
     fi
@@ -269,7 +269,7 @@ function kube_install_with_yum() {
     if ! command -v $i &> /dev/null
     then
       echo "Installing '$i' with yum..."
-      yum -y install $i &> /dev/null || exit 1
+      sudo yum -y install $i &> /dev/null || exit 1
     else
       echo "'$i' already installed."
     fi

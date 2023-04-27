@@ -68,8 +68,6 @@ RUNIX_PGADMIN_ENDPOINT=pga
 
 CURRENT_DIR=$(pwd)
 CACHE_DIR="${HOME}/.kubecli"
-REPO_DIR=$(git rev-parse --show-toplevel)
-REPO_BRANCH=$(git branch --show-current)
 TIMESTAMP=$(date +"%Y-%m-%d %H-%M-%S")
 
 
@@ -79,6 +77,11 @@ KUBERNETES_HCLOUD_FILE=bG9jYWxzIHsKICBrOHNfaW5pdCAgICAgICAgICAgICAgPSBtb2R1bGUua
 SOFTWARE_HCLOUD_FILE=bG9jYWxzIHsKICBrOHNfZGFzaGJvYXJkICAgICAgID0gbW9kdWxlLnNvZnR3YXJlX2s4c19kYXNoYm9hcmQKICBoYXNoaWNvcnBfdmF1bHQgICAgID0gbW9kdWxlLnNvZnR3YXJlX2hhc2hpY29ycF92YXVsdAogIG1pbmlvX2NvbnNvbGUgICAgICAgPSBtb2R1bGUuc29mdHdhcmVfbWluaW9fY29uc29sZQogIG9uZXBhc3N3b3JkX2Nvbm5lY3QgPSBtb2R1bGUuc29mdHdhcmVfb25lcGFzc3dvcmRfY29ubmVjdAogIGRvY2tlcl9yZWdpc3RyeSAgICAgPSBtb2R1bGUuc29mdHdhcmVfZG9ja2VyX3JlZ2lzdHJ5CiAgaGVsbV9jaGFydG11c2V1bSAgICA9IG1vZHVsZS5zb2Z0d2FyZV9oZWxtX2NoYXJ0bXVzZXVtCiAgZ2l0bGFiX2NpICAgICAgICAgICA9IG1vZHVsZS5zb2Z0d2FyZV9naXRsYWJfY2kKICBwcm9tZXRoZXVzX3N0YWNrICAgID0gbW9kdWxlLnNvZnR3YXJlX3Byb21ldGhldXNfc3RhY2sKICBlbGFzdGljX3N0YWNrICAgICAgID0gbW9kdWxlLnNvZnR3YXJlX2VsYXN0aWNfc3RhY2sKfQoKbW9kdWxlICJzb2Z0d2FyZV9rOHNfZGFzaGJvYXJkIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1rOHMtZGFzaGJvYXJkIgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMuazhzX2Rhc2hib2FyZAogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbGFiZWxzICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwp9Cgptb2R1bGUgInNvZnR3YXJlX2hhc2hpY29ycF92YXVsdCIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtaGFzaGljb3JwLXZhdWx0IgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMuaGFzaGljb3JwX3ZhdWx0CiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInNvZnR3YXJlX21pbmlvX2NvbnNvbGUiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3NvZnR3YXJlLW1pbmlvLWNvbnNvbGUiCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5taW5pb19jb25zb2xlCiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInNvZnR3YXJlX29uZXBhc3N3b3JkX2Nvbm5lY3QiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3NvZnR3YXJlLW9uZXBhc3N3b3JkLWNvbm5lY3QiCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5vbmVwYXNzd29yZF9jb25uZWN0CiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInNvZnR3YXJlX2RvY2tlcl9yZWdpc3RyeSIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtZG9ja2VyLXJlZ2lzdHJ5IgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMuZG9ja2VyX3JlZ2lzdHJ5CiAgY2x1c3RlciAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIGJ1Y2tldCAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5kb2NrZXJfYnVja2V0Cn0KCm1vZHVsZSAic29mdHdhcmVfaGVsbV9jaGFydG11c2V1bSIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtaGVsbS1jaGFydG11c2V1bSIKICBzZXR0aW5ncyA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLmhlbG1fY2hhcnRtdXNldW0KICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHNlY3JldHMgID0gbG9jYWwua3ViZV9zZWNyZXRzCiAgYnVja2V0ICAgPSBsb2NhbC5rdWJlX2luZnJhc3RydWN0dXJlLmhlbG1fYnVja2V0Cn0KCm1vZHVsZSAic29mdHdhcmVfZ2l0bGFiX2NpIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1naXRsYWItY2kiCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5naXRsYWJfY2kKICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5sYWJlbHMKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIGJ1Y2tldCAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5naXRsYWJfYnVja2V0Cn0KCm1vZHVsZSAic29mdHdhcmVfcHJvbWV0aGV1c19zdGFjayIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtcHJvbWV0aGV1cy1zdGFjayIKICBzZXR0aW5ncyA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLnByb21ldGhldXNfc3RhY2sKICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHNlY3JldHMgID0gbG9jYWwua3ViZV9zZWNyZXRzCn0KCm1vZHVsZSAic29mdHdhcmVfZWxhc3RpY19zdGFjayIgewogIHNvdXJjZSAgID0gIi4uLy4uLy4uLy4uL21vZHVsZXMvc29mdHdhcmUtZWxhc3RpYy1zdGFjayIKICBzZXR0aW5ncyA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLmVsYXN0aWNfc3RhY2sKICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHNlY3JldHMgID0gbG9jYWwua3ViZV9zZWNyZXRzCn0KCm1vZHVsZSAic29mdHdhcmVfYml0bmFtaV9waHBteWFkbWluIiB7CiAgc291cmNlICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1iaXRuYW1pLXBocG15YWRtaW4iCiAgc2V0dGluZ3MgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucy5iaXRuYW1pX3BocG15YWRtaW4KICBjbHVzdGVyICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3Rlcgp9Cgptb2R1bGUgInNvZnR3YXJlX3J1bml4X3BnYWRtaW4iIHsKICBzb3VyY2UgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy9zb2Z0d2FyZS1ydW5peC1wZ2FkbWluIgogIHNldHRpbmdzICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuYXBwbGljYXRpb25zLnJ1bml4X3BnYWRtaW4KICBjbHVzdGVyICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICB1c2VycyAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnVzZXJzCiAgYXBwbGljYXRpb25zID0gbG9jYWwua3ViZV9zZXR0aW5ncy5hcHBsaWNhdGlvbnMKICBzZWNyZXRzICAgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMKfQo=
 UTILITIES_HCLOUD_FILE=bG9jYWxzIHsKICBrdWJlX3VzZXJzICAgICAgICAgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfdXNlcnMKICBrdWJlX2FkbWlucyAgICAgICAgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfYWRtaW5zCiAga3ViZV9kZXZlbG9wZXJzICAgID0gbW9kdWxlLnV0aWxpdGllc19rdWJlX2RldmVsb3BlcnMKICBrdWJlX3ZpZXdlcnMgICAgICAgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfdmlld2VycwogIGt1YmVfcHJvamVjdHMgICAgICA9IG1vZHVsZS51dGlsaXRpZXNfa3ViZV9wcm9qZWN0cwogIGt1YmVfZW52aXJvbm1lbnRzICA9IG1vZHVsZS51dGlsaXRpZXNfa3ViZV9lbnZpcm9ubWVudHMKICBrdWJlX29yZ2FuaXphdGlvbnMgPSBtb2R1bGUudXRpbGl0aWVzX2t1YmVfb3JnYW5pemF0aW9ucwogIGt1YmVfY2x1c3RlciAgICAgICA9IG1vZHVsZS51dGlsaXRpZXNfa3ViZV9jbHVzdGVyCiAga3ViZV9vcGVyYXRvciAgICAgID0gbW9kdWxlLnV0aWxpdGllc19rdWJlX29wZXJhdG9yCn0KCm1vZHVsZSAidXRpbGl0aWVzX2t1YmVfY2x1c3RlciIgewogIHNvdXJjZSAgICAgICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLWNsdXN0ZXIiCiAgY2x1c3RlciAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbGFiZWxzICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5sYWJlbHMKICB1c2VycyAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnVzZXJzCiAgaW1hZ2VzICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5kb2NrZXJfaW1hZ2VzCiAgY2hhcnRzICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5oZWxtX2NoYXJ0cwogIHZlcnNpb25zICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MudmVyc2lvbnMKICByZXBvc2l0b3JpZXMgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmhlbG1fcmVwb3NpdG9yaWVzCiAgc2VjcmV0cyAgICAgICAgID0gbG9jYWwua3ViZV9zZWNyZXRzCiAgY29zdHMgICAgICAgICAgID0gbG9jYWwuaGNsb3VkX2Nvc3RzLmNvc3RzCiAgdmF1bHQgICAgICAgICAgID0gbG9jYWwuaGFzaGljb3JwX3ZhdWx0CiAgaGVsbSAgICAgICAgICAgID0gbG9jYWwuaGVsbV9jaGFydG11c2V1bQogIGdyYWZhbmFfdXNlcnMgICA9IGxvY2FsLmt1YmVfdXNlcnMuZ3JhZmFuYV91c2VycwogIG5vZGVwaW5nX3Bob25lcyA9IGxvY2FsLmt1YmVfdXNlcnMubm9kZXBpbmdfcGhvbmVzCiAgbm9kZXBpbmdfZW1haWxzID0gbG9jYWwua3ViZV91c2Vycy5ub2RlcGluZ19lbWFpbHMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV91c2VycyIgewogIHNvdXJjZSAgICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLXVzZXJzIgogIGNsdXN0ZXIgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubGFiZWxzCiAgdXNlcnMgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy51c2VycwogIGNvbnRhY3RzICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY29udGFjdHMKICBzeXN0ZW0gICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnN5c3RlbQogIG9wZXJhdG9yICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3Mub3BlcmF0b3IKICBhcHBsaWNhdGlvbnMgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucwogIHNlY3JldHMgICAgICA9IGxvY2FsLmt1YmVfc2VjcmV0cwp9Cgptb2R1bGUgInV0aWxpdGllc19rdWJlX2FkbWlucyIgewogIHNvdXJjZSAgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy91dGlsaXRpZXMta3ViZS1hZG1pbnMiCiAgY2x1c3RlciAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGFkbWlucyAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFkbWlucwogIGFwcGxpY2F0aW9ucyAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmFwcGxpY2F0aW9ucwogIHNlY3JldHMgICAgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMKICBub2RlcyAgICAgICAgID0gbG9jYWwua3ViZV9pbmZyYXN0cnVjdHVyZS5ub2RlcwogIHZhdWx0X21vdW50cyAgPSBsb2NhbC5rdWJlX3VzZXJzLnZhdWx0X21vdW50cwogIG1pbmlvX2J1Y2tldHMgPSBsb2NhbC5rdWJlX3VzZXJzLm1pbmlvX2J1Y2tldHMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV9kZXZlbG9wZXJzIiB7CiAgc291cmNlICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLWRldmVsb3BlcnMiCiAgY2x1c3RlciAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGRldmVsb3BlcnMgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmRldmVsb3BlcnMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV92aWV3ZXJzIiB7CiAgc291cmNlICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLXZpZXdlcnMiCiAgY2x1c3RlciA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIHZpZXdlcnMgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnZpZXdlcnMKfQoKbW9kdWxlICJ1dGlsaXRpZXNfa3ViZV9wcm9qZWN0cyIgewogIHNvdXJjZSAgICAgICAgICAgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLXByb2plY3RzIgogIGNsdXN0ZXIgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MubGFiZWxzCiAgcHJvamVjdHMgICAgICAgICAgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5wcm9qZWN0cwogIHZlcnNpb25zICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MudmVyc2lvbnMKICBxdW90YXMgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnF1b3RhcwogIGltYWdlcyAgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuZG9ja2VyX2ltYWdlcwogIHNlY3JldHMgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIHZhdWx0ICAgICAgICAgICAgICA9IGxvY2FsLmhhc2hpY29ycF92YXVsdAogIG1pbmlvICAgICAgICAgICAgICA9IGxvY2FsLm1pbmlvX2NvbnNvbGUKICBkb2NrZXIgICAgICAgICAgICAgPSBsb2NhbC5kb2NrZXJfcmVnaXN0cnkKICBnaXRsYWJfdXNlcnMgICAgICAgPSBsb2NhbC5rdWJlX3VzZXJzLmdpdGxhYl91c2VycwogIGdpdGxhYl9ncm91cHMgICAgICA9IGxvY2FsLmt1YmVfb3JnYW5pemF0aW9ucy5naXRsYWJfZ3JvdXBzCiAgZ3JhZmFuYV91c2VycyAgICAgID0gbG9jYWwua3ViZV91c2Vycy5ncmFmYW5hX3VzZXJzCiAgZ3JhZmFuYV9kYXNoYm9hcmRzID0gbG9jYWwua3ViZV9jbHVzdGVyLmdyYWZhbmFfZGFzaGJvYXJkcwogIG5vZGVwaW5nX3Bob25lcyAgICA9IGxvY2FsLmt1YmVfdXNlcnMubm9kZXBpbmdfcGhvbmVzCiAgbm9kZXBpbmdfZW1haWxzICAgID0gbG9jYWwua3ViZV91c2Vycy5ub2RlcGluZ19lbWFpbHMKICBub2RlcGluZ19zbGFjayAgICAgPSBsb2NhbC5rdWJlX2NsdXN0ZXIubm9kZXBpbmdfc2xhY2sKICBkb2NrZXJfaW1hZ2VzICAgICAgPSBsb2NhbC5rdWJlX2NsdXN0ZXIuZG9ja2VyX2ltYWdlcwp9Cgptb2R1bGUgInV0aWxpdGllc19rdWJlX2Vudmlyb25tZW50cyIgewogIHNvdXJjZSAgICAgICAgICAgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy91dGlsaXRpZXMta3ViZS1lbnZpcm9ubWVudHMiCiAgY2x1c3RlciAgICAgICAgICAgICAgICA9IGxvY2FsLmt1YmVfc2V0dGluZ3MuY2x1c3RlcgogIGxhYmVscyAgICAgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwogIHF1b3RhcyAgICAgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLnF1b3RhcwogIGVudmlyb25tZW50cyAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmVudmlyb25tZW50cwogIHNlY3JldHMgICAgICAgICAgICAgICAgPSBsb2NhbC5rdWJlX3NlY3JldHMKICB2ZWxlcm8gICAgICAgICAgICAgICAgID0gbG9jYWwudm13YXJlX3ZlbGVybwogIGdpdGxhYiAgICAgICAgICAgICAgICAgPSBsb2NhbC5naXRsYWJfY2kKICBtaW5pb19zZXJ2aWNlX2FjY291bnRzID0gbG9jYWwua3ViZV9wcm9qZWN0cy5taW5pb19zZXJ2aWNlX2FjY291bnRzCiAgZ2l0bGFiX3Byb2plY3RzICAgICAgICA9IGxvY2FsLmt1YmVfcHJvamVjdHMuZ2l0bGFiX3Byb2plY3RzCn0KCm1vZHVsZSAidXRpbGl0aWVzX2t1YmVfb3JnYW5pemF0aW9ucyIgewogIHNvdXJjZSAgICAgICAgPSAiLi4vLi4vLi4vLi4vbW9kdWxlcy91dGlsaXRpZXMta3ViZS1vcmdhbml6YXRpb25zIgogIGNsdXN0ZXIgICAgICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmNsdXN0ZXIKICBvcmdhbml6YXRpb25zID0gbG9jYWwua3ViZV9zZXR0aW5ncy5vcmdhbml6YXRpb25zCiAgZ2l0bGFiX3VzZXJzICA9IGxvY2FsLmt1YmVfdXNlcnMuZ2l0bGFiX3VzZXJzCn0KCm1vZHVsZSAidXRpbGl0aWVzX2t1YmVfb3BlcmF0b3IiIHsKICBzb3VyY2UgICA9ICIuLi8uLi8uLi8uLi9tb2R1bGVzL3V0aWxpdGllcy1rdWJlLW9wZXJhdG9yIgogIHNldHRpbmdzID0gbG9jYWwua3ViZV9zZXR0aW5ncy5vcGVyYXRvcgogIGNsdXN0ZXIgID0gbG9jYWwua3ViZV9zZXR0aW5ncy5jbHVzdGVyCiAgbGFiZWxzICAgPSBsb2NhbC5rdWJlX3NldHRpbmdzLmxhYmVscwogIGltYWdlcyAgID0gbG9jYWwua3ViZV9jbHVzdGVyLmRvY2tlcl9pbWFnZXMKICBzZWNyZXRzICA9IGxvY2FsLmt1YmVfc2VjcmV0cwogIHJlZ2lzdHJ5ID0gbG9jYWwuZG9ja2VyX3JlZ2lzdHJ5CiAgbWluaW8gICAgPSBsb2NhbC5taW5pb19jb25zb2xlCiAgZ2l0bGFiICAgPSBsb2NhbC5naXRsYWJfY2kKfQo=
 
+
+function kube_ops_startup() {
+  REPO_DIR=$(git rev-parse --show-toplevel)
+  REPO_BRANCH=$(git branch --show-current)
+}
 
 function kube_startup() {
   VALIDATTE_VERSION='^([0-9]+\.){0,2}(\*|[0-9]+)$'
@@ -180,178 +183,32 @@ function kube_dev_get_or_create_vault_token() {
   fi
 }
 
-function kube_install_nodeping_provider() {
-  local INSTALL_DIR=/tmp/terraform-nodeping
-  local PROVIDER_DIR=~/.terraform.d/plugins/softkraft.co/terraform/nodeping/0.0.1
-  local PROVIDER_REPO=https://github.com/softkraftco/terraform-nodeping.git
-  local OS_ARCHS=(linux_amd64 darwin_amd64 linux_arm64 darwin_arm64)
-  for i in "${OS_ARCHS[@]}"
-  do
-    if [ ! -d "$PROVIDER_DIR/$i" ]
-    then
-      if [ -d "$INSTALL_DIR" ]
-      then
-        cd $INSTALL_DIR
-      else
-        git clone $PROVIDER_REPO $INSTALL_DIR && cd $INSTALL_DIR || exit 1
-      fi
-      echo "Installing 'nodeping' ($i) provider with make..."
-      OS_ARCH=$i make install &> /dev/null || exit 1
-    else
-      echo "'nodeping' ($i) provider already installed."
-    fi
-  done
-  rm -rf $INSTALL_DIR
-  cd $CURRENT_DIR
-}
-
-function kube_install_helm_deps() {
-  if [ -z "$(helm plugin list | grep cm-push)" ]
+function kube_ops_check_dependencies() {
+  if ! command -v go &> /dev/null || ! command -v jq &> /dev/null || ! command -v yq &> /dev/null || ! command -v git &> /dev/null || ! command -v helm &> /dev/null || ! command -v docker &> /dev/null || ! command -v tfswitch &> /dev/null || ! command -v terraform &> /dev/null || ! command -v hcl2json &> /dev/null || ! command -v terraform-docs &> /dev/null
   then
-    echo "Installing 'helm-push' with helm..."
-    helm plugin install https://github.com/chartmuseum/helm-push
-  else
-    echo "'helm-push' already installed."
+    echo "Following ependencies are required to be installed:"
+    echo " - go"
+    echo " - jq"
+    echo " - yq"
+    echo " - git"
+    echo " - helm"
+    echo " - docker"
+    echo " - tfswitch"
+    echo " - terraform"
+    echo " - hcl2json"
+    echo " - terraform-docs"
+    exit
   fi
 }
 
-function kube_install_tf_deps() {
-  kube_install_nodeping_provider
-}
-
-function kube_install_go_deps() {
-  local GO_DEPS=(github.com/tmccombs/hcl2json github.com/terraform-docs/terraform-docs)
-  for i in "${GO_DEPS[@]}"
-  do
-    if ! command -v $(basename $i) &> /dev/null
-    then
-      echo "Installing '$(basename $i)' with go..."
-      go install $i &> /dev/null || exit 1
-    else
-      echo "'$(basename $i)' already installed."
-    fi
-  done
-}
-
-function kube_install_with_brew() {
-  local BREW_DEPS=(go git tfswitch kubectl jq yq helm docker)
-  for i in "${BREW_DEPS[@]}"
-  do
-    if ! command -v $i &> /dev/null
-    then
-      echo "Installing '$i' with brew..."
-      brew install $i &> /dev/null || exit 1
-    else
-      echo "'$i' already installed."
-    fi
-  done
-}
-
-function kube_install_with_apt() {
-  local APT_DEPS=(golang-go git kubectl jq yq helm docker)
-  for i in "${APT_DEPS[@]}"
-  do
-    if ! command -v $i &> /dev/null
-    then
-      echo "Installing '$i' with apt..."
-      sudo apt-get update &> /dev/null || exit 1
-      sudo apt-get -y install $i &> /dev/null || exit 1
-    else
-      echo "'$i' already installed."
-    fi
-  done
-}
-
-function kube_install_with_yum() {
-  local YUM_DEPS=(go git kubectl jq yq helm docker)
-  for i in "${YUM_DEPS[@]}"
-  do
-    if ! command -v $i &> /dev/null
-    then
-      echo "Installing '$i' with yum..."
-      sudo yum -y install $i &> /dev/null || exit 1
-    else
-      echo "'$i' already installed."
-    fi
-  done
-}
-
-function kube_install_with_bash() {
-  if ! command -v tfswitch &> /dev/null
+function kube_dev_check_dependencies() {
+  if ! command -v jq &> /dev/null || ! command -v yq &> /dev/null || ! command -v git &> /dev/null || ! command -v kubectl &> /dev/null
   then
-    echo "Installing 'tfswitch' with bash..."
-    curl -s -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash &> /dev/null || exit 1
-  else
-    echo "'tfswitch' already installed."
-  fi
-}
-
-function kube_install_os_deps() {
-  local OS=$(uname)
-  case ${OS} in
-		Darwin)
-      kube_install_with_brew
-			return
-			;;
-		Linux)
-      if [ -n "`which apt-get`" ]
-      then
-        kube_install_with_apt
-      elif [ -n "`which yum`" ]
-      then
-        kube_install_with_yum
-      fi
-      kube_install_with_bash
-			return
-			;;
-	esac
-	err "OS detected (${os}) is not supported."
-	exit 1
-}
-
-function kube_install_deps() {
-  echo "Installing dependencies..."
-  kube_install_os_deps
-  kube_install_go_deps
-  kube_install_tf_deps
-  kube_install_helm_deps
-}
-
-function kube_install() {
-  kube_install_deps
-  cd $REPO_DIR
-  if [ -f $(pwd)/kube ]
-  then
-    if [ -f ${HOME}/.local/bin/kube ]
-    then
-      if [ "$1" == "--force" ]
-      then
-        echo "Overwriting 'kube'..."
-        yes | cp -rf $(pwd)/kube ${HOME}/.local/bin/kube
-      else
-        echo "'kube' already installed."
-      fi
-    else
-      echo "Installing 'kube'..."
-      yes | cp -rf $(pwd)/kube ${HOME}/.local/bin/kube
-    fi
-  else
-    echo "Failed to install 'kube'."
-  fi
-  if [ -f ${HOME}/.local/bin/kube ]
-  then
-    chmod +x ${HOME}/.local/bin/kube
-  else
-    echo "Failed to make 'kube' executable."
-  fi
-  cd $CURRENT_DIR
-}
-
-function kube_check_dependencies() {
-  if ! command -v kube &> /dev/null || ! command -v go &> /dev/null || ! command -v git &> /dev/null || ! command -v tfswitch &> /dev/null || ! command -v terraform &> /dev/null || ! command -v hcl2json &> /dev/null || ! command -v terraform-docs &> /dev/null
-  then
-    echo "Dependencies not found."
-    kube_install "$@"
+    echo "Following ependencies are required to be installed:"
+    echo " - jq"
+    echo " - yq"
+    echo " - git"
+    echo " - kubectl"
     exit
   fi
 }
@@ -1426,118 +1283,119 @@ EOF
 }
 
 function kube_ops() {
+  kube_ops_startup
   case $1 in
     "setup")
       kube_ops_setup "${@:2}"
       exit
       ;;
     "scaffold" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_repo_dir
       echo "Executing: ${@}"
       kube_scaffold "${@:2}"
       exit
       ;;
     "update" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_repo_dir
       echo "Executing: ${@}"
       kube_update
       exit
       ;;
     "format" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_repo_dir
       echo "Executing: ${@}"
       kube_format
       exit
       ;;
     "docs" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_repo_dir
       echo "Executing: ${@}"
       kube_docs
       exit
       ;;
     "push" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_repo_dir
       echo "Executing: ${@}"
       kube_push "${@:2}"
       exit
       ;;
     "init" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_init "${@:2}"
       exit
       ;;
     "upgrade" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_upgrade "${@:2}"
       exit
       ;;
     "validate" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_validate "${@:2}"
       exit
       ;;
     "output" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_output "${@:2}"
       exit
       ;;
     "plan" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_plan "${@:2}"
       exit
       ;;
     "apply" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_apply "${@:2}"
       exit
       ;;
     "spin" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_spin
       exit
       ;;
     "provision" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_provision
       exit
       ;;
     "cycle" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_cycle
       exit
       ;;
     "destroy" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_destroy "${@:2}"
       exit
       ;;
     "print" )
-      kube_check_dependencies
+      kube_ops_check_dependencies
       kube_check_if_cluster_dir
       echo "Executing: ${@}"
       kube_print
@@ -1695,14 +1553,17 @@ function kube_dev_init() {
 function kube_dev() {
   case $1 in
     "setup")
+      kube_dev_check_dependencies
       kube_dev_setup "${@:2}"
       exit
       ;;
     "clear")
+      kube_dev_check_dependencies
       kube_dev_clear "${@:2}"
       exit
       ;;
     "init")
+      kube_dev_check_dependencies
       kube_dev_init "${@:2}"
       exit
       ;;
@@ -1713,9 +1574,37 @@ function kube_dev() {
   esac
 }
 
+function kube_install() {
+  if [ -f $(pwd)/kube ]
+  then
+    if [ -f ${HOME}/.local/bin/kube ]
+    then
+      if [ "$1" == "--force" ]
+      then
+        echo "Overwriting 'kube'..."
+        yes | cp -rf $(pwd)/kube ${HOME}/.local/bin/kube
+        chmod +x ${HOME}/.local/bin/kube
+      else
+        echo "'kube' already installed."
+      fi
+    else
+      echo "Installing 'kube'..."
+      yes | cp -rf $(pwd)/kube ${HOME}/.local/bin/kube
+      chmod +x ${HOME}/.local/bin/kube
+    fi
+    if [[ -z $(cat ${HOME}/.bash_profile | grep 'export PATH=$PATH:$HOME/.local/bin') ]]
+    then
+      touch ${HOME}/.bash_profile
+      echo 'export PATH=$PATH:$HOME/.local/bin' >> ${HOME}/.bash_profile
+      source ${HOME}/.bash_profile
+    fi
+  else
+    echo "Failed to install 'kube'."
+  fi
+}
+
 case $1 in
   "install" )
-    kube_check_dependencies
     kube_install "${@:2}"
     exit
     ;;

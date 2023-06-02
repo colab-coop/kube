@@ -1,57 +1,49 @@
 #!/bin/bash
 
-# Create a temporary file to store the kube executable
-TMP_KUBE_EXE=$(mktemp)
-
-# Download the kube executable from a remote location and save it to the temporary file
-curl -s https://raw.githubusercontent.com/colab-coop/kube/main/kube --output ${TMP_KUBE_EXE}
-
-# Create the .local/bin directory if it doesn't exist
-mkdir -p ${HOME}/.local/bin
-
-# Move the kube executable from the temporary file to the .local/bin directory
-mv "${TMP_KUBE_EXE}" "${HOME}/.local/bin/kube"
-
-# Make the kube executable executable
-chmod +x ${HOME}/.local/bin/kube
-
-# Check the current shell using pattern matching
-if [[ $SHELL == *"/bash" ]]; then
-  echo "Current shell is bash."
-  
-  # Create or update the .bash_profile file
-  touch ${HOME}/.bash_profile
-  
-  # Add $HOME/.local/bin to the path in .bash_profile
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ${HOME}/.bash_profile
-  
-  # Update the current session's path
-  export PATH="$HOME/.local/bin:$PATH"
-  
-elif [[ $SHELL == *"/csh" || $SHELL == *"/tcsh" ]]; then
-  echo "Current shell is csh."
-  
-  # Add $HOME/.local/bin to the path in .cshrc
-  echo 'setenv PATH "$HOME/.local/bin:$PATH"' >> ${HOME}/.cshrc
-  
-  # Update the current session's path
-  setenv PATH "$HOME/.local/bin:$PATH"
-  
-elif [[ $SHELL == *"/zsh" ]]; then
-  echo "Current shell is zsh."
-  
-  # Add $HOME/.local/bin to the path in .zshrc
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ${HOME}/.zshrc
-  
-  # Update the current session's path
-  export PATH="$HOME/.local/bin:$PATH"
-  
-else
-  echo "Unknown shell."
-  exit 1
-fi
-
-echo "Kube installed, you are ready to go..."
+# Script to install the 'kube' executable and update the shell configuration file
 
 # Usage
 # curl -s https://raw.githubusercontent.com/colab-coop/kube/main/install | bash
+
+# Create a temporary file to store the kube executable
+tmp_kube_exe=$(mktemp)
+
+# Download the kube executable from a remote location and save it to the temporary file
+curl -s https://raw.githubusercontent.com/colab-coop/kube/main/kube --output "${tmp_kube_exe}" || { echo "Failed to download kube executable."; exit 1; }
+
+# Create the .local/bin directory if it doesn't exist
+mkdir -p "${HOME}/.local/bin" || { echo "Failed to create .local/bin directory."; exit 1; }
+
+# Move the kube executable from the temporary file to the .local/bin directory
+mv "${tmp_kube_exe}" "${HOME}/.local/bin/kube" || { echo "Failed to move kube executable."; exit 1; }
+
+# Make the kube executable executable
+chmod +x "${HOME}/.local/bin/kube"
+
+# Set the default export command to 'export'
+export_cmd="export"
+
+# Check the current shell using pattern matching
+if [[ $SHELL == *"/bash" ]]; then
+  echo -e "Current shell is bash.\n"
+  shell_startup_file=~/.bash_profile
+  touch "$shell_startup_file"
+elif [[ $SHELL == *"/csh" || $SHELL == *"/tcsh" ]]; then
+  echo -e "Current shell is csh.\n"
+  shell_startup_file=~/.cshrc
+  export_cmd="setenv"
+elif [[ $SHELL == *"/zsh" ]]; then
+  echo -e "Current shell is zsh.\n"
+  shell_startup_file=~/.zshrc
+else
+  echo "Unknown shell. Please add the following line to your shell configuration file manually:"
+  echo 'export PATH=$HOME/.local/bin:$PATH'
+  exit 1
+fi
+
+# Append the new export line to the shell startup file if it doesn't exist
+grep -qxF "${export_cmd} PATH=\$HOME/.local/bin:\$PATH" "${shell_startup_file}" || echo "${export_cmd} PATH=\$HOME/.local/bin:\$PATH" >> "${shell_startup_file}"
+
+echo -e "Kube installed, you are ready to go...\n"
+echo -e "Restart your terminal or run the following command to make sure the new commands are available:\n"
+echo "source ${shell_startup_file}"
